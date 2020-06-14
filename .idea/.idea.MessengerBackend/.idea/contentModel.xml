@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ContentModelStore">
+    <e p="C:\Users\terberes\.Rider2019.3\config\scratches" t="IncludeRecursive" />
+    <e p="C:\Users\terberes\.Rider2019.3\system\extResources" t="IncludeRecursive" />
+    <e p="C:\Users\terberes\.Rider2019.3\system\resharper-host\local\Transient\ReSharperHost\v193\SolutionCaches\_MessengerBackend.-1178914348.00" t="ExcludeRecursive" />
+    <e p="C:\Users\terberes\Documents\ITProjects\dotNET\MessengerBackend" t="IncludeFlat">
+      <e p="MessengerBackend" t="IncludeRecursive">
+        <e p=".env" t="Include" />
+        <e p="appsettings.Development.json" t="Include" />
+        <e p="appsettings.json" t="Include" />
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="Controllers" t="Include" />
+        <e p="MessengerBackend.csproj" t="IncludeRecursive" />
+        <e p="Models" t="Include">
+          <e p="User.cs" t="Include" />
+        </e>
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netcoreapp3.1" t="Include">
+              <e p="MessengerBackend.AssemblyInfo.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="Program.cs" t="Include" />
+        <e p="Properties" t="Include">
+          <e p="launchSettings.json" t="Include" />
+        </e>
+        <e p="Sockets" t="Include">
+          <e p="Models" t="Include">
+            <e p="SocketClient.cs" t="Include" />
+            <e p="SocketMessage.cs" t="Include" />
+          </e>
+          <e p="SocketMessageSerializer.cs" t="Include" />
+          <e p="SocketServer.cs" t="Include" />
+          <e p="ThreadDispatcher.cs" t="Include" />
+        </e>
+        <e p="Startup.cs" t="Include" />
+      </e>
+      <e p="MessengerBackend.sln" t="IncludeFlat" />
+      <e p="packages" t="ExcludeRecursive" />
+    </e>
+  </component>
+</project>
