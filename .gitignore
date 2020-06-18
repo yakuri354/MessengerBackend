@@ -1,1 +1,5 @@
 ﻿/MessengerBackend/.env
+.idea
+/MessengerBackend/obj/
+/MessengerBackend/bin/
+/MessengerBackend/Protobuf/*

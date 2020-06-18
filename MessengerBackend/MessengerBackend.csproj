@@ -5,15 +5,24 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <PackageReference Include="Crc32.NET" Version="1.2.0" />
       <PackageReference Include="dotenv.net" Version="2.1.1" />
       <PackageReference Include="DotNetty.Common" Version="0.6.0" />
       <PackageReference Include="DotNetty.Transport" Version="0.6.0" />
+      <PackageReference Include="Google.Protobuf" Version="3.12.3" />
       <PackageReference Include="JWT" Version="7.2.1" />
       <PackageReference Include="JWT.Extensions.AspNetCore" Version="7.1.0-beta2" />
+      <PackageReference Include="Serilog" Version="2.10.0-dev-01191" />
+      <PackageReference Include="Serilog.AspNetCore" Version="3.4.0-dev-00171" />
+      <PackageReference Include="Serilog.Extensions.Logging" Version="3.0.2-dev-10280" />
+      <PackageReference Include="Serilog.Settings.Configuration" Version="3.2.0-dev-00244" />
+      <PackageReference Include="Serilog.Sinks.Console" Version="4.0.0-dev-00839" />
+      <PackageReference Include="Serilog.Sinks.File" Version="5.0.0-dev-00880" />
     </ItemGroup>
 
     <ItemGroup>
       <Folder Include="Controllers" />
+      <Folder Include="Protobuf" />
     </ItemGroup>
 
 
