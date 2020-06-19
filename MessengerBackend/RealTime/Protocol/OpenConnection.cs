@@ -9,7 +9,7 @@ namespace MessengerBackend.RealTime.Protocol
         public Socket Socket { get; }
         private readonly Guid? UserGuid;
         internal ILogger _logger;
-        internal Guid ID => Guid.NewGuid();
+        internal Guid ID;
 
         public OpenConnection(Socket s)
         {

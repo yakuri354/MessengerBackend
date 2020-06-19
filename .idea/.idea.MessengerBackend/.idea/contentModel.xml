@@ -1,6 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ContentModelStore">
+    <e p="C:\Users\terberes\.nuget\packages\microsoft.net.test.sdk\16.4.0\build\netcoreapp2.1" t="Include">
+      <e p="Microsoft.NET.Test.Sdk.Program.cs" t="Include" />
+    </e>
+    <e p="C:\Users\terberes\.nuget\packages\microsoft.testplatform.testhost\16.4.0\build\netcoreapp2.1\x64\testhost.dll" t="Include" />
+    <e p="C:\Users\terberes\.nuget\packages\microsoft.testplatform.testhost\16.4.0\build\netcoreapp2.1\x64\testhost.exe" t="Include" />
+    <e p="C:\Users\terberes\.nuget\packages\nunit3testadapter\3.15.1\build\netcoreapp2.0\nunit.engine.api.dll" t="Include" />
+    <e p="C:\Users\terberes\.nuget\packages\nunit3testadapter\3.15.1\build\netcoreapp2.0\nunit.engine.dll" t="Include" />
+    <e p="C:\Users\terberes\.nuget\packages\nunit3testadapter\3.15.1\build\netcoreapp2.0\NUnit3.TestAdapter.dll" t="Include" />
+    <e p="C:\Users\terberes\.nuget\packages\nunit3testadapter\3.15.1\build\netcoreapp2.0\NUnit3.TestAdapter.pdb" t="Include" />
     <e p="C:\Users\terberes\.Rider2019.3\config\scratches" t="IncludeRecursive" />
     <e p="C:\Users\terberes\.Rider2019.3\system\extResources" t="IncludeRecursive" />
     <e p="C:\Users\terberes\.Rider2019.3\system\resharper-host\local\Transient\ReSharperHost\v193\SolutionCaches\_MessengerBackend.-1178914348.00" t="ExcludeRecursive" />
@@ -26,18 +35,33 @@
         <e p="Properties" t="Include">
           <e p="launchSettings.json" t="Include" />
         </e>
-        <e p="Sockets" t="Include">
-          <e p="Models" t="Include">
-            <e p="SocketClient.cs" t="Include" />
-            <e p="SocketMessage.cs" t="Include" />
+        <e p="Protobuf" t="Include" />
+        <e p="RealTime" t="Include">
+          <e p="Protocol" t="Include">
+            <e p="OpenConnection.cs" t="Include" />
+            <e p="Packet.cs" t="Include" />
+            <e p="Serialization" t="Include">
+              <e p="Packets" t="Include" />
+            </e>
           </e>
-          <e p="SocketMessageSerializer.cs" t="Include" />
-          <e p="SocketServer.cs" t="Include" />
-          <e p="ThreadDispatcher.cs" t="Include" />
+          <e p="RealtimeServer.cs" t="Include" />
         </e>
+        <e p="scripts.json" t="Include" />
         <e p="Startup.cs" t="Include" />
       </e>
       <e p="MessengerBackend.sln" t="IncludeFlat" />
+      <e p="MessengerBackendTests" t="IncludeRecursive">
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="MessengerBackendTests.csproj" t="IncludeRecursive" />
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netcoreapp3.1" t="Include">
+              <e p="MessengerBackendTests.AssemblyInfo.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="UnitTest1.cs" t="Include" />
+      </e>
       <e p="packages" t="ExcludeRecursive" />
     </e>
   </component>

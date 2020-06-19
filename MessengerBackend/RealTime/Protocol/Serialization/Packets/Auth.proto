@@ -1,7 +1,0 @@
-﻿syntax = "proto3";
-
-option csharp_namespace = "MessengerBackend.RealTime.Protocol.Serialization.Packets";
-
-message Auth {
-    string GUID = 1;
-}

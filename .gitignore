@@ -1,5 +1,9 @@
-﻿/MessengerBackend/.env
-.idea
+﻿MessengerBackend/.env
+/.idea/
+
+/.vs/
 /MessengerBackend/obj/
 /MessengerBackend/bin/
-/MessengerBackend/Protobuf/*
+MessengerBackend/Protobuf/*
+/MessengerBackendTests/bin/
+/MessengerBackendTests/obj/

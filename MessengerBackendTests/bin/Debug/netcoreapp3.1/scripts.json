@@ -1,0 +1,5 @@
+﻿{
+  "scripts": {
+    "precompile": "'C:\\Users\\terberes\\bin\\protoc.exe \"-I=$( ( ls -r -Directory RealTime/Protocol/Serialization ).FullName )\" --csharp_out=Protobuf $( (ls -r -File RealTime/Protocol/Serialization).FullName )'"
+  }
+}
