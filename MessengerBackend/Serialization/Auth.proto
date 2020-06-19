@@ -1,0 +1,12 @@
+﻿syntax = "proto3";
+
+option csharp_namespace = "MessengerBackend.Serialization.Auth";
+
+message UserBuf {
+    string FirstName = 1;
+    string LastName = 2;
+    string Username = 3;
+    string Bio = 4;
+    string PhoneNumber = 5;
+    string CountryCode = 6;
+}

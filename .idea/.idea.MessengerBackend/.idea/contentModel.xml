@@ -19,7 +19,10 @@
         <e p="appsettings.Development.json" t="Include" />
         <e p="appsettings.json" t="Include" />
         <e p="bin" t="ExcludeRecursive" />
-        <e p="Controllers" t="Include" />
+        <e p="Controllers" t="Include">
+          <e p="AuthController.cs" t="Include" />
+          <e p="UserController.cs" t="Include" />
+        </e>
         <e p="MessengerBackend.csproj" t="IncludeRecursive" />
         <e p="Models" t="Include">
           <e p="User.cs" t="Include" />
@@ -35,18 +38,23 @@
         <e p="Properties" t="Include">
           <e p="launchSettings.json" t="Include" />
         </e>
-        <e p="Protobuf" t="Include" />
+        <e p="Protobuf" t="Include">
+          <e p="Auth.cs" t="Include" />
+        </e>
         <e p="RealTime" t="Include">
           <e p="Protocol" t="Include">
             <e p="OpenConnection.cs" t="Include" />
             <e p="Packet.cs" t="Include" />
-            <e p="Serialization" t="Include">
-              <e p="Packets" t="Include" />
-            </e>
           </e>
           <e p="RealtimeServer.cs" t="Include" />
         </e>
         <e p="scripts.json" t="Include" />
+        <e p="Serialization" t="Include">
+          <e p="Auth.proto" t="Include" />
+        </e>
+        <e p="Services" t="Include">
+          <e p="UserService.cs" t="Include" />
+        </e>
         <e p="Startup.cs" t="Include" />
       </e>
       <e p="MessengerBackend.sln" t="IncludeFlat" />

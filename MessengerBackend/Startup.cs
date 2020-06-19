@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using dotenv.net;
 using JWT;
+using MessengerBackend.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
@@ -29,6 +30,8 @@ namespace MessengerBackend
         {
             services.AddControllers();
 
+            services.AddSingleton<UserService>();
+
             services.AddAuthentication(options =>
             {
                     options.DefaultAuthenticateScheme = JwtAuthenticationDefaults.AuthenticationScheme;
@@ -51,7 +54,7 @@ namespace MessengerBackend
                 app.UseDeveloperExceptionPage();
             }
 
-            app.UseHttpsRedirection();
+            //app.UseHttpsRedirection();
 
             app.UseRouting();
 

@@ -1,6 +1,5 @@
 ﻿MessengerBackend/.env
 /.idea/
-
 /.vs/
 /MessengerBackend/obj/
 /MessengerBackend/bin/

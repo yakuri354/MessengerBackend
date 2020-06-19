@@ -74,6 +74,10 @@
           "target": "Package",
           "version": "[5.0.0-dev-00880, )"
         },
+        "Twilio": {
+          "target": "Package",
+          "version": "[5.43.0, )"
+        },
         "nunit": {
           "target": "Package",
           "version": "[3.12.0, )"
