@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -19,11 +18,11 @@ namespace MessengerBackend.RealTime
         public static ushort PortV4 { get; private set; } = 7100;
         public static ushort PortV6 { get; private set; } = 7200;
         private List<OpenConnection> _connections = new List<OpenConnection>();
-        private ManualResetEvent _shouldAcceptV4 = new ManualResetEvent(false);
-        private ManualResetEvent _shouldAcceptV6 = new ManualResetEvent(false);
+        private readonly ManualResetEvent _shouldAcceptV4 = new ManualResetEvent(false);
+        private readonly ManualResetEvent _shouldAcceptV6 = new ManualResetEvent(false);
 
-        private Socket _sockv4;
-        private Socket _sockv6;
+        private Socket _sockV4;
+        private Socket _sockV6;
 
         private static ILogger _log = Log.ForContext<RealTimeServer>();
 
@@ -46,17 +45,17 @@ namespace MessengerBackend.RealTime
                 {
                     _log.Debug("Opening sockets");
                     _log.Verbose("Opening IPv4 socket");
-                    _sockv4 = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                    _sockV4 = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
                     _log.Verbose("Opening IPv6 socket");
-                    _sockv6 = new Socket(AddressFamily.InterNetworkV6, SocketType.Stream, ProtocolType.Tcp);
+                    _sockV6 = new Socket(AddressFamily.InterNetworkV6, SocketType.Stream, ProtocolType.Tcp);
                     try
                     {
                         _log.Verbose("Binding IPv4 endpoint");
-                        _sockv4.Bind(new IPEndPoint(IPAddress.Any, PortV4));
-                        PortV4 = (ushort) ((IPEndPoint) _sockv4.LocalEndPoint).Port;
+                        _sockV4.Bind(new IPEndPoint(IPAddress.Any, PortV4));
+                        PortV4 = (ushort) ((IPEndPoint) _sockV4.LocalEndPoint).Port;
                         _log.Verbose("Binding IPv6 endpoint");
-                        _sockv6.Bind(new IPEndPoint(IPAddress.IPv6Any, PortV6));
-                        PortV6 = (ushort) ((IPEndPoint) _sockv6.LocalEndPoint).Port;
+                        _sockV6.Bind(new IPEndPoint(IPAddress.IPv6Any, PortV6));
+                        PortV6 = (ushort) ((IPEndPoint) _sockV6.LocalEndPoint).Port;
                     }
                     catch (SocketException ex)
                     {
@@ -64,15 +63,15 @@ namespace MessengerBackend.RealTime
                     }
 
                     _log.Verbose("Listening on both sockets");
-                    _sockv4.Listen(128);
-                    _sockv6.Listen(128);
+                    _sockV4.Listen(128);
+                    _sockV6.Listen(128);
                     Task.WaitAll(
                         Task.Run(() =>
                         {
                             while (!_cancellation.IsCancellationRequested)
                             {
                                 _shouldAcceptV4.Reset();
-                                _sockv4.BeginAccept(HandleConnection, _sockv4);
+                                _sockV4.BeginAccept(HandleConnection, _sockV4);
                                 IsListeningV4.Set();
                                 _shouldAcceptV4.WaitOne();
                             }
@@ -82,7 +81,7 @@ namespace MessengerBackend.RealTime
                             while (!_cancellation.IsCancellationRequested)
                             {
                                 _shouldAcceptV6.Reset();
-                                _sockv6.BeginAccept(HandleConnection, _sockv6);
+                                _sockV6.BeginAccept(HandleConnection, _sockV6);
                                 IsListeningV6.Set();
                                 _shouldAcceptV6.WaitOne();
                             }
@@ -131,7 +130,8 @@ namespace MessengerBackend.RealTime
             socket.Receive(buffer, 6, (int) (packet.Size - 6), SocketFlags.None);
             packet.Payload = buffer[6..^4];
             if (!Crc32CAlgorithm.IsValidWithCrcAtEnd(buffer))
-                throw new NotImplementedException(); // TODO Implement proper error handling
+                // throw new NotImplementedException(); // TODO Implement proper error handling
+                return;
             if (packet.Payload.Length == 4 && Encoding.ASCII.GetString(packet.Payload).ToLower() == "ping")
             {
                 socket.Send(Encoding.ASCII.GetBytes("PONG"));
@@ -152,8 +152,8 @@ namespace MessengerBackend.RealTime
             // Listening thread unblocks and stops because of cancellation check in while loop condition
             _shouldAcceptV4.Set();
             _shouldAcceptV6.Set();
-            _sockv4.Close();
-            _sockv6.Close();
+            _sockV4.Close();
+            _sockV6.Close();
         }
     }
 }

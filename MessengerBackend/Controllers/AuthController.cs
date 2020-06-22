@@ -1,6 +1,5 @@
 ﻿using System.Text.Json;
 using MessengerBackend.Models;
-using MessengerBackend.Serialization.Auth;
 using MessengerBackend.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -21,12 +20,7 @@ namespace MessengerBackend.Controllers
         [HttpPost("reg", Name = "Register")]
         public ActionResult Register()
         {
-            return Ok(JsonSerializer.Serialize(new UserBuf
-            {
-                FirstName = "John",
-                LastName = "Doe",
-                Username = "jdoe"
-            }));
+            return Ok();
         }
     }
 }

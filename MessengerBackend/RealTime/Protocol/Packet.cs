@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Text;
-using DotNetty.Transport.Channels;
 using Force.Crc32;
 
 // ReSharper disable UnusedMember.Global
@@ -13,7 +11,7 @@ namespace MessengerBackend.RealTime.Protocol
     {
         public PacketType Type;
 
-        private static int _metadataSize = 10;
+        private const int _metadataSize = 10;
         //   _____________________________
         //  |            Header           |
         //  |           6 bytes           |
