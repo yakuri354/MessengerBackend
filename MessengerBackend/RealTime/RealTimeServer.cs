@@ -34,6 +34,8 @@ namespace MessengerBackend.RealTime
         public RealTimeServer(CancellationTokenSource cancellationTokenSource, int portV4, int portV6)
         {
             _cancellation = cancellationTokenSource;
+            // This is needed for concurrent unit tests and auto port assignment with port 0
+            // or maybe just custom port
             PortV4 = (ushort) portV4;
             PortV6 = (ushort) portV6;
         }

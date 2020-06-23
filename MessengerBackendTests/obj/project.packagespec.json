@@ -1,22 +1,26 @@
 ﻿{
   "version": "1.0.0",
   "restore": {
-    "projectUniqueName": "/home/terberes/ITProjects/dotNET/MessengerBackend/MessengerBackendTests/MessengerBackendTests.csproj",
+    "projectUniqueName": "C:\\Users\\terberes\\Documents\\ITProjects\\dotNET\\MessengerBackend\\MessengerBackendTests\\MessengerBackendTests.csproj",
     "projectName": "MessengerBackendTests",
-    "projectPath": "/home/terberes/ITProjects/dotNET/MessengerBackend/MessengerBackendTests/MessengerBackendTests.csproj",
-    "outputPath": "/home/terberes/ITProjects/dotNET/MessengerBackend/MessengerBackendTests/obj/",
+    "projectPath": "C:\\Users\\terberes\\Documents\\ITProjects\\dotNET\\MessengerBackend\\MessengerBackendTests\\MessengerBackendTests.csproj",
+    "outputPath": "C:\\Users\\terberes\\Documents\\ITProjects\\dotNET\\MessengerBackend\\MessengerBackendTests\\obj\\",
     "projectStyle": "PackageReference",
+    "fallbackFolders": [
+      "D:\\Microsoft\\Xamarin\\NuGet"
+    ],
     "originalTargetFrameworks": [
       "netcoreapp3.1"
     ],
     "sources": {
+      "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
       "https://api.nuget.org/v3/index.json": {}
     },
     "frameworks": {
       "netcoreapp3.1": {
         "projectReferences": {
-          "/home/terberes/ITProjects/dotNET/MessengerBackend/MessengerBackend/MessengerBackend.csproj": {
-            "projectPath": "/home/terberes/ITProjects/dotNET/MessengerBackend/MessengerBackend/MessengerBackend.csproj"
+          "C:\\Users\\terberes\\Documents\\ITProjects\\dotNET\\MessengerBackend\\MessengerBackend\\MessengerBackend.csproj": {
+            "projectPath": "C:\\Users\\terberes\\Documents\\ITProjects\\dotNET\\MessengerBackend\\MessengerBackend\\MessengerBackend.csproj"
           }
         }
       }
@@ -45,6 +49,10 @@
         "Microsoft.NET.Test.Sdk": {
           "target": "Package",
           "version": "[16.4.0, )"
+        },
+        "NSwag.AspNetCore": {
+          "target": "Package",
+          "version": "[13.6.1, )"
         },
         "NUnit3TestAdapter": {
           "target": "Package",
@@ -105,7 +113,7 @@
           "privateAssets": "all"
         }
       },
-      "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/3.1.103/RuntimeIdentifierGraph.json"
+      "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\3.1.301\\RuntimeIdentifierGraph.json"
     }
   }
 }

@@ -17,6 +17,9 @@ namespace MessengerBackend.Models
         public SessionType Type;
         public SessionPlatform Platform;
 
+        [Required] 
+        public string RefreshToken;
+
         [Required]
         public ulong ExpiresIn;
         [Required]
