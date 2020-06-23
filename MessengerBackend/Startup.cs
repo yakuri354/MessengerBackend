@@ -3,6 +3,7 @@ using MessengerBackend.Models;
 using MessengerBackend.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -28,8 +29,17 @@ namespace MessengerBackend
             services.AddControllers();
 
             services.AddSingleton<UserService>();
+            services.AddSingleton<VerificationService>();
 
             services.AddSwaggerDocument();
+
+            services.Configure<ApiBehaviorOptions>(options =>
+            {
+                options.ClientErrorMapping[429] = new ClientErrorData
+                {
+                    Title = "Too Many Requests"
+                };
+            });
 
             Log.Information("Initializing Postgres");
             services.AddDbContext<MessengerDBContext>(builder => builder
@@ -57,6 +67,8 @@ namespace MessengerBackend
 
             app.UseAuthorization();
             app.UseAuthentication();
+            
+            // TODO Rate limiting
 
             app.UseEndpoints(endpoints => { endpoints.MapControllers(); });
         }

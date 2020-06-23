@@ -1,5 +1,4 @@
-﻿
-using System;
+﻿using System;
 using MessengerBackend.Models;
 
 namespace MessengerBackend.Services
@@ -12,7 +11,13 @@ namespace MessengerBackend.Services
         {
             _dbContext = dbContext;
         }
-        
-        // public void AddNewUser()
+
+        public User Add(string number)
+        {
+            var newUser = _dbContext.Users.Add(new User { Number = number });
+
+            _dbContext.SaveChanges();
+            return newUser.Entity;
+        }
     }
 }

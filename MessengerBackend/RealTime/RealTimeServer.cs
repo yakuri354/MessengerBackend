@@ -143,9 +143,9 @@ namespace MessengerBackend.RealTime
             socket.Close();
         }
         
-        public ManualResetEvent IsListeningV4 { get; private set; } = new ManualResetEvent(false);
-        public ManualResetEvent IsListeningV6 { get; private set; } = new ManualResetEvent(false);
-            // Mostly for unit tests
+        // Mostly for unit tests
+        public readonly ManualResetEvent IsListeningV4 = new ManualResetEvent(false);
+        public readonly ManualResetEvent IsListeningV6 = new ManualResetEvent(false);
 
         public void Dispose()
         {

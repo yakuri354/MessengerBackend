@@ -3,6 +3,5 @@
 /.vs/
 /MessengerBackend/obj/
 /MessengerBackend/bin/
-MessengerBackend/Protobuf/*
 /MessengerBackendTests/bin/
 /MessengerBackendTests/obj/

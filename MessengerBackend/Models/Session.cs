@@ -1,5 +1,6 @@
 using System;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Net;
 
 namespace MessengerBackend.Models
@@ -7,7 +8,8 @@ namespace MessengerBackend.Models
     public class Session
     {
         [Required]
-        public Guid ID;
+        [Column(TypeName = "uint8")]
+        public long ID;
         [Required]
         public User User;
         public string Fingerprint;

@@ -111,6 +111,12 @@
           "protobuf-net.Core": "3.0.0"
         }
       },
+      "quickford": {
+        "type": "Direct",
+        "requested": "[1.1.0, )",
+        "resolved": "1.1.0",
+        "contentHash": "PTxMlPQRidz8AR7MK+1VHivm4YC2abexSjmyMZITQtzEWKnL4cnCyND1QLhKWzVaMnecG0Sov3IDRMJwXskYwQ=="
+      },
       "Serilog": {
         "type": "Direct",
         "requested": "[2.10.0-dev-01191, )",

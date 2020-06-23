@@ -1,19 +1,34 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
 using Twilio;
 using Twilio.Exceptions;
+using Twilio.Rest.Verify.V2;
 using Twilio.Rest.Verify.V2.Service;
 
 namespace MessengerBackend.Services
 {
     public class VerificationService
     {
-        private readonly TwilioConfig _config;
+        private readonly TwilioConfig _twilioConfig;
+        public readonly ServiceResource TwilioService;
+        private readonly IConfiguration _configuration;
 
-        public VerificationService(TwilioConfig configuration)
+        public readonly double ResendInterval;
+
+        public VerificationService(IConfiguration configuration)
         {
-            _config = configuration;
-            TwilioClient.Init(_config.AccountSid, _config.AuthToken);
+            _configuration = configuration;
+            ResendInterval = _configuration.GetValue<double>("SMSVerification:ResendInterval");
+            _twilioConfig = new TwilioConfig
+            {
+                AccountSid = Environment.GetEnvironmentVariable("TWILIO_ACCOUNT_SID"), 
+                AuthToken = Environment.GetEnvironmentVariable("TWILIO_AUTH_TOKEN"),
+                ServiceSid = Environment.GetEnvironmentVariable("TWILIO_SERVICE_SID")
+            };
+            TwilioClient.Init(_twilioConfig.AccountSid, _twilioConfig.AuthToken);
+            TwilioService = ServiceResource.Fetch(_twilioConfig.ServiceSid);
         }
 
         public async Task<VerificationResult> StartVerificationAsync(string phoneNumber, string channel)
@@ -23,7 +38,7 @@ namespace MessengerBackend.Services
                 var verificationResource = await VerificationResource.CreateAsync(
                     to: phoneNumber,
                     channel: channel,
-                    pathServiceSid: _config.VerificationSid
+                    pathServiceSid: _twilioConfig.ServiceSid
                 );
                 return new VerificationResult { Sid = verificationResource.Sid };
             }
@@ -40,15 +55,15 @@ namespace MessengerBackend.Services
                 var verificationCheckResource = await VerificationCheckResource.CreateAsync(
                     to: phoneNumber,
                     code: code,
-                    pathServiceSid: _config.VerificationSid
+                    pathServiceSid: _twilioConfig.ServiceSid
                 );
-                return verificationCheckResource.Status.Equals("approved") ?
+                return verificationCheckResource.Status == "approved" ?
                     new VerificationResult { Sid = verificationCheckResource.Sid } :
                     new VerificationResult { Error = "wrong code" };
             }
             catch (TwilioException e)
             {
-                return new VerificationResult { Error = e.Message};
+                return new VerificationResult { Error = e.Message };
             }
         }
     }
@@ -58,7 +73,7 @@ namespace MessengerBackend.Services
         public bool IsValid => Error != null;
 
         public string Sid { get; set; }
-        
+
         public string Error { get; set; }
     }
 
@@ -66,6 +81,6 @@ namespace MessengerBackend.Services
     {
         public string AccountSid { get; set; }
         public string AuthToken { get; set; }
-        public string VerificationSid { get; set; }
+        public string ServiceSid { get; set; }
     }
 }

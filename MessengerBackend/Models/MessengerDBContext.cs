@@ -7,11 +7,11 @@ namespace MessengerBackend.Models
     public class MessengerDBContext : DbContext
     {
         public DbSet<User> Users;
+        public DbSet<Bot> Bots;
         public DbSet<Room> Rooms;
         public DbSet<Message> Messages;
         public DbSet<Session> Sessions;
-
-        public DbSet<OngoingRegister> Registrations;
+        
 
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -32,6 +32,7 @@ namespace MessengerBackend.Models
             modelBuilder.Entity<Session>().Property(p => p.ID).HasIdentityOptions();
             modelBuilder.Entity<Message>().Property(p => p.ID).HasIdentityOptions();
             modelBuilder.Entity<Room>().Property(p => p.ID).HasIdentityOptions();
+            modelBuilder.Entity<Bot>().Property(p => p.ID).HasIdentityOptions();
         }
     }
 }

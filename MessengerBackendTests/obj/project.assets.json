@@ -1710,6 +1710,15 @@
           "lib/netcoreapp3.0/protobuf-net.Core.dll": {}
         }
       },
+      "quickford/1.1.0": {
+        "type": "package",
+        "compile": {
+          "lib/netstandard2.0/Quickford.dll": {}
+        },
+        "runtime": {
+          "lib/netstandard2.0/Quickford.dll": {}
+        }
+      },
       "runtime.native.System/4.3.0": {
         "type": "package",
         "dependencies": {
@@ -3345,7 +3354,8 @@
           "Serilog.Sinks.File": "5.0.0-dev-00880",
           "Twilio": "5.43.0",
           "dotenv.net": "2.1.1",
-          "protobuf-net": "3.0.0"
+          "protobuf-net": "3.0.0",
+          "quickford": "1.1.0"
         },
         "compile": {
           "bin/placeholder/MessengerBackend.dll": {}
@@ -5709,6 +5719,18 @@
         "lib/netstandard2.1/protobuf-net.Core.xml",
         "protobuf-net.core.3.0.0.nupkg.sha512",
         "protobuf-net.core.nuspec"
+      ]
+    },
+    "quickford/1.1.0": {
+      "sha512": "PTxMlPQRidz8AR7MK+1VHivm4YC2abexSjmyMZITQtzEWKnL4cnCyND1QLhKWzVaMnecG0Sov3IDRMJwXskYwQ==",
+      "type": "package",
+      "path": "quickford/1.1.0",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "lib/netstandard2.0/Quickford.dll",
+        "quickford.1.1.0.nupkg.sha512",
+        "quickford.nuspec"
       ]
     },
     "runtime.native.System/4.3.0": {
@@ -10271,7 +10293,8 @@
       "Serilog.Sinks.Console >= 4.0.0-dev-00839",
       "Serilog.Sinks.File >= 5.0.0-dev-00880",
       "Twilio >= 5.43.0",
-      "nunit >= 3.12.0"
+      "nunit >= 3.12.0",
+      "quickford >= 1.1.0"
     ]
   },
   "packageFolders": {
@@ -10379,6 +10402,10 @@
           "nunit": {
             "target": "Package",
             "version": "[3.12.0, )"
+          },
+          "quickford": {
+            "target": "Package",
+            "version": "[1.1.0, )"
           }
         },
         "imports": [
