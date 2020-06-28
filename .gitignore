@@ -1,4 +1,6 @@
 ﻿MessengerBackend/.env
+MessengerBackend/secrets
+Messengerbackend/appsettings.Secret.json
 /.idea/
 /.vs/
 /MessengerBackend/obj/

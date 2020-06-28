@@ -1,10 +1,14 @@
-using System.ComponentModel.DataAnnotations.Schema;
+using System;
 
 namespace MessengerBackend.Models
 {
     public class Message
     {
-        [Column(TypeName = "uint8")]
-        public int ID;
+        public int ID { get; set; }
+        public Room TargetRoom { get; set; }
+        public string Text { get; set; }
+        public User Sender { get; set; }
+        public DateTime TimeSent { get; set; }
+        public Message ReplyTo { get; set; }
     }
 }

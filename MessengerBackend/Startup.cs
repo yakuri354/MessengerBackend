@@ -1,13 +1,16 @@
 using System;
+using JWT;
 using MessengerBackend.Models;
 using MessengerBackend.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Npgsql.Logging;
 using Serilog;
@@ -40,6 +43,9 @@ namespace MessengerBackend
                     Title = "Too Many Requests"
                 };
             });
+
+            services.AddHttpContextAccessor();
+            services.TryAddSingleton<IActionContextAccessor, ActionContextAccessor>();
 
             Log.Information("Initializing Postgres");
             services.AddDbContext<MessengerDBContext>(builder => builder

@@ -18,16 +18,12 @@ namespace MessengerBackend.Models
         {
             optionsBuilder.UseSnakeCaseNamingConvention();
             NpgsqlConnection.GlobalTypeMapper.MapEnum<RoomType>();
-            NpgsqlConnection.GlobalTypeMapper.MapEnum<SessionType>();
-            NpgsqlConnection.GlobalTypeMapper.MapEnum<SessionType>();
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder
-                .HasPostgresEnum<RoomType>()
-                .HasPostgresEnum<SessionType>()
-                .HasPostgresEnum<SessionPlatform>();
+                .HasPostgresEnum<RoomType>();
             modelBuilder.Entity<User>().Property(p => p.ID).HasIdentityOptions();
             modelBuilder.Entity<Session>().Property(p => p.ID).HasIdentityOptions();
             modelBuilder.Entity<Message>().Property(p => p.ID).HasIdentityOptions();

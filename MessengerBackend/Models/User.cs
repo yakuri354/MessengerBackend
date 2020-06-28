@@ -31,11 +31,9 @@ namespace MessengerBackend.Models
         public string Bio { get; set; }
 
         [Required]
-        [Column(TypeName = "int")]
-        private uint RandomUID { get; set; }
-
-        [NotMapped]
-        public string PublicUID => Base32.Encode(RandomUID);
+        [Column(TypeName = "char(10)")]
+        public string PublicUID { get; set; }
+        
 
         public IEnumerable<Session> Sessions;
         public IEnumerable<Room> Rooms;
@@ -44,6 +42,7 @@ namespace MessengerBackend.Models
     
     public class Bot : Actor
     {
+        [Column(TypeName = "varchar(100)")]
         public string Name { get; set; }
         public string Description { get; set; }
 

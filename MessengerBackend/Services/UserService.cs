@@ -12,9 +12,12 @@ namespace MessengerBackend.Services
             _dbContext = dbContext;
         }
 
-        public User Add(string number)
+        public User Add(string number, string firstName, string lastName)
         {
-            var newUser = _dbContext.Users.Add(new User { Number = number });
+            var newUser = _dbContext.Users.Add(
+                new User { Number = number, 
+                                 FirstName = firstName,
+                                 LastName = lastName });
 
             _dbContext.SaveChanges();
             return newUser.Entity;

@@ -1,11 +1,7 @@
-using System;
-using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
-using Force.Crc32;
 using MessengerBackend.RealTime;
 using MessengerBackend.RealTime.Protocol;
 using NUnit.Framework;
@@ -18,7 +14,6 @@ namespace MessengerBackendTests
         public void Setup()
         {
         }
-        
 
         [Test]
         public void Ping()

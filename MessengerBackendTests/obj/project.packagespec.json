@@ -1,26 +1,22 @@
 ﻿{
   "version": "1.0.0",
   "restore": {
-    "projectUniqueName": "C:\\Users\\terberes\\Documents\\ITProjects\\dotNET\\MessengerBackend\\MessengerBackendTests\\MessengerBackendTests.csproj",
+    "projectUniqueName": "/home/yakuri354/ITProjects/dotNET/MessengerBackend/MessengerBackendTests/MessengerBackendTests.csproj",
     "projectName": "MessengerBackendTests",
-    "projectPath": "C:\\Users\\terberes\\Documents\\ITProjects\\dotNET\\MessengerBackend\\MessengerBackendTests\\MessengerBackendTests.csproj",
-    "outputPath": "C:\\Users\\terberes\\Documents\\ITProjects\\dotNET\\MessengerBackend\\MessengerBackendTests\\obj\\",
+    "projectPath": "/home/yakuri354/ITProjects/dotNET/MessengerBackend/MessengerBackendTests/MessengerBackendTests.csproj",
+    "outputPath": "/home/yakuri354/ITProjects/dotNET/MessengerBackend/MessengerBackendTests/obj/",
     "projectStyle": "PackageReference",
-    "fallbackFolders": [
-      "D:\\Microsoft\\Xamarin\\NuGet"
-    ],
     "originalTargetFrameworks": [
       "netcoreapp3.1"
     ],
     "sources": {
-      "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
       "https://api.nuget.org/v3/index.json": {}
     },
     "frameworks": {
       "netcoreapp3.1": {
         "projectReferences": {
-          "C:\\Users\\terberes\\Documents\\ITProjects\\dotNET\\MessengerBackend\\MessengerBackend\\MessengerBackend.csproj": {
-            "projectPath": "C:\\Users\\terberes\\Documents\\ITProjects\\dotNET\\MessengerBackend\\MessengerBackend\\MessengerBackend.csproj"
+          "/home/yakuri354/ITProjects/dotNET/MessengerBackend/MessengerBackend/MessengerBackend.csproj": {
+            "projectPath": "/home/yakuri354/ITProjects/dotNET/MessengerBackend/MessengerBackend/MessengerBackend.csproj"
           }
         }
       }
@@ -34,6 +30,14 @@
   "frameworks": {
     "netcoreapp3.1": {
       "dependencies": {
+        "Base62-Net": {
+          "target": "Package",
+          "version": "[1.1.1, )"
+        },
+        "BouncyCastle": {
+          "target": "Package",
+          "version": "[1.8.6.1, )"
+        },
         "Crc32.NET": {
           "target": "Package",
           "version": "[1.2.0, )"
@@ -41,6 +45,14 @@
         "EFCore.NamingConventions": {
           "target": "Package",
           "version": "[5.0.0-preview5, )"
+        },
+        "JWT": {
+          "target": "Package",
+          "version": "[7.2.1, )"
+        },
+        "JWT.Extensions.AspNetCore": {
+          "target": "Package",
+          "version": "[7.1.0-beta2, )"
         },
         "Microsoft.AspNetCore.Authentication.JwtBearer": {
           "target": "Package",
@@ -90,6 +102,10 @@
           "target": "Package",
           "version": "[5.43.0, )"
         },
+        "UAParser": {
+          "target": "Package",
+          "version": "[3.1.44, )"
+        },
         "nunit": {
           "target": "Package",
           "version": "[3.12.0, )"
@@ -117,7 +133,7 @@
           "privateAssets": "all"
         }
       },
-      "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\3.1.301\\RuntimeIdentifierGraph.json"
+      "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/3.1.103/RuntimeIdentifierGraph.json"
     }
   }
 }

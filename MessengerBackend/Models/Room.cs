@@ -6,11 +6,11 @@ namespace MessengerBackend.Models
 {
     public class Room
     {
-        [Column(TypeName = "uint8")]
-        public long ID;
+        public int ID;
         public RoomType Type;
         public IEnumerable<User> Users;
         public IEnumerable<Message> Messages;
+        public DateTime DateCreated { get; set; }
     }
 
     public enum RoomType
