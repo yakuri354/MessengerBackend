@@ -24,34 +24,17 @@ namespace MessengerBackend.Services
     {
         private readonly MessengerDBContext _dbContext;
         private readonly IConfiguration _configuration;
+        private readonly CryptoService _cryptoService;
 
         public const int RefreshTokenLifetimeDays = 30;
-        public const int TokenLength = 20;
-
-        public readonly RSACryptoServiceProvider PublicKey;
-        public readonly RSACryptoServiceProvider PrivateKey;
+        public const int RefreshTokenLength = 20;
+        public const int AccessTokenJtiLength = 10;
+        
 
         public AuthService(MessengerDBContext dbContext, IConfiguration config)
         {
             _dbContext = dbContext;
             _configuration = config;
-            using (var fs = File.OpenText(_configuration["Secrets:JWT:RSAPublicKeyPath"]))
-            {
-                var pemReader = new PemReader(fs);
-                var keyPair = (AsymmetricCipherKeyPair) pemReader.ReadObject();
-                PublicKey = new RSACryptoServiceProvider();
-                PublicKey.ImportParameters(
-                    DotNetUtilities.ToRSAParameters((RsaPrivateCrtKeyParameters) keyPair.Private));
-            }
-
-            using (var fs = File.OpenText(_configuration["Secrets:JWT:RSAPrivateKeyPath"]))
-            {
-                var pemReader = new PemReader(fs);
-                var keyPair = (AsymmetricCipherKeyPair) pemReader.ReadObject();
-                PrivateKey = new RSACryptoServiceProvider();
-                PrivateKey.ImportParameters(
-                    DotNetUtilities.ToRSAParameters((RsaPrivateCrtKeyParameters) keyPair.Private));
-            }
         }
 
         public Task<Session> GetSession(string token)
@@ -59,22 +42,12 @@ namespace MessengerBackend.Services
             return _dbContext.Sessions.Where(s => s.RefreshToken == token).FirstOrDefaultAsync();
         }
 
-        public Task<Session> GetAndVerifySession(string token, string fingerprint, string userAgent)
+        public Session GetAndDelete(string token)
         {
-            return _dbContext.Sessions
-                .Where(s =>
-                    s.RefreshToken == token
-                    && s.Fingerprint == fingerprint
-                    && s.UserAgent == userAgent)
-                .FirstOrDefaultAsync();
-        }
-
-        public async Task<Session> GetAndRefresh(string token, string fingerprint, string userAgent)
-        {
-            var session = await GetAndVerifySession(token, fingerprint, userAgent);
+            var session = GetSession(token).Result;
             if (session == null) return null;
             _dbContext.Sessions.Remove(session);
-            await _dbContext.SaveChangesAsync();
+            _dbContext.SaveChangesAsync();
             return session;
         }
 
@@ -90,7 +63,6 @@ namespace MessengerBackend.Services
             // TODO 
             public const string ISSUER = "backend";
             public const string AUDIENCE = "user";
-            public const string JWTPublicKey = "";
         }
         
         private static readonly RNGCryptoServiceProvider _rng = new RNGCryptoServiceProvider();

@@ -14,7 +14,7 @@ namespace MessengerBackend.Models
         public User User;
         public string Fingerprint;
         public string UserAgent;
-        public IPAddress IP;
+        public byte[] IPHash;
 
         [Required] 
         public string RefreshToken;

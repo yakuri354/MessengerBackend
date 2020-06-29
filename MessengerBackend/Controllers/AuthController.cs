@@ -1,25 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Net;
-using System.Net.Http.Headers;
-using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Timers;
-using JWT.Algorithms;
 using JWT.Builder;
-using JWT.Exceptions;
 using MessengerBackend.Models;
 using MessengerBackend.Services;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.Net.Http.Headers;
 using Newtonsoft.Json;
-using UAParser;
+using Org.BouncyCastle.Utilities.Encoders;
 
 namespace MessengerBackend.Controllers
 {
@@ -30,22 +23,21 @@ namespace MessengerBackend.Controllers
         private readonly UserService _userService;
         private readonly VerificationService _verificationService;
         private readonly AuthService _authService;
+        private readonly CryptoService _cryptoService;
 
-        private readonly JwtBuilder _jwtBuilder;
 
-        private List<NumberBan> _numberBans;
+        private readonly List<NumberBan> _numberBans = new List<NumberBan>();
 
         public AuthController(
             UserService userService,
             VerificationService verificationService,
-            AuthService authService)
+            AuthService authService,
+            CryptoService cryptoService)
         {
             _userService = userService;
             _verificationService = verificationService;
             _authService = authService;
-
-            _jwtBuilder = new JwtBuilder()
-                .WithAlgorithm(new RS256Algorithm(_authService.PublicKey, _authService.PrivateKey));
+            _cryptoService = cryptoService;
         }
 
         [HttpPost("sendCode")]
@@ -94,7 +86,7 @@ namespace MessengerBackend.Controllers
                     code = ""
                 });
 
-            if (input == null) return Forbid();
+            if (input == null) return BadRequest();
 
             if (input.code.Length != _verificationService.TwilioService.CodeLength) return Forbid();
 
@@ -106,8 +98,8 @@ namespace MessengerBackend.Controllers
             return Ok(JsonConvert.SerializeObject(new
             {
                 registrationToken =
-                    _jwtBuilder
-                        .ExpirationTime(DateTime.Now.AddMinutes(30))
+                    _cryptoService.JwtBuilder
+                        .ExpirationTime(DateTime.Now.AddMinutes(20))
                         .AddClaim("type", "reg")
                         .AddClaim("num", input.number)
                         .Encode()
@@ -115,7 +107,7 @@ namespace MessengerBackend.Controllers
         }
 
         [HttpPost("register")]
-        public async Task<IActionResult> Register()
+        public IActionResult Register()
         {
             var input = JsonConvert.DeserializeAnonymousType(
                 Request.Body.ToString(), new
@@ -127,11 +119,11 @@ namespace MessengerBackend.Controllers
                 });
 
             if (input == null) return BadRequest();
-            var token = _jwtBuilder
+            var token = _cryptoService.JwtBuilder
                 .MustVerifySignature()
                 .Decode<IDictionary<string, string>>(input.registerToken);
             if (token["type"] != "reg" || !token.ContainsKey("number"))
-                return BadRequest(@"Token must have 'type' == 'reg'");
+                return BadRequest("Token must have \"type\" == \"reg\"");
 
             var session =
                 _authService.AddSession(new Session
@@ -139,77 +131,78 @@ namespace MessengerBackend.Controllers
                     CreatedAt = DateTime.UtcNow,
                     ExpiresIn = AuthService.RefreshTokenLifetimeDays,
                     Fingerprint = input.fingerprint,
-                    IP = HttpContext.Connection.RemoteIpAddress,
+                    IPHash = SHA256.Create()
+                        .ComputeHash(HttpContext.Connection.RemoteIpAddress.GetAddressBytes()),
                     UserAgent = Request.Headers[HttpRequestHeader.UserAgent.ToString()],
                     User = _userService.Add(token["number"], input.firstName, input.lastName),
                     UpdatedAt = DateTime.UtcNow,
-                    RefreshToken = AuthService.GenerateToken(AuthService.TokenLength)
+                    RefreshToken = AuthService.GenerateToken(AuthService.RefreshTokenLength)
                 });
 
             return Ok(JsonConvert.SerializeObject(new
             {
-                uid = newUser.PublicUID
+                refreshToken = session.Entity.RefreshToken,
+                accessToken = _cryptoService.JwtBuilder
+                    .AddClaim("type", "access")
+                    .AddClaim("jti", AuthService.GenerateToken(AuthService.AccessTokenJtiLength))
+                    .AddClaim("ip",
+                        Base64.ToBase64String(SHA256.Create()
+                            .ComputeHash(HttpContext.Connection.RemoteIpAddress.GetAddressBytes())))
+                    .AddClaim("user", session.Entity.User.PublicUID)
+                    .ExpirationTime(DateTime.UtcNow.AddDays(AuthService.RefreshTokenLifetimeDays))
+                    .Encode()
             }));
         }
 
         [HttpPost("refresh")]
-        public async Task<IActionResult> Refresh()
+        public IActionResult Refresh()
         {
             var input = JsonConvert.DeserializeAnonymousType(Request.Body.GetString(), new
             {
                 fingerprint = ""
             });
             var token = Request.Headers[HeaderNames.Authorization];
-            string parsedToken;
-            try
-            {
-                parsedToken = new JwtBuilder()
-                    .WithAlgorithm(new HMACSHA256Algorithm())
-                    .WithSecret(AuthOptions.JWTSECRET)
-                    .MustVerifySignature()
-                    .Decode(token);
-            }
-            catch (TokenExpiredException)
-            {
-                return Forbid(JsonConvert.SerializeObject(new
-                {
-                    error = "token expired"
-                }));
-            }
-            catch (SignatureVerificationException)
-            {
-                return Forbid(JsonConvert.SerializeObject(new
-                {
-                    error = "token signature invalid"
-                }));
-            }
 
-            // parsedToken.
-            var session = await
-                _authService.GetAndRefresh(token, input.fingerprint,
-                    Request.Headers[HeaderNames.UserAgent]);
+            var session = _authService.GetAndDelete(token);
             if (session == null) return BadRequest();
-            var newSession = new Session
+            if (session.Fingerprint != input.fingerprint
+                || session.IPHash != HttpContext.Connection.RemoteIpAddress.GetAddressBytes()
+                || session.UserAgent != Request.Headers["User-Agent"])
+                return Forbid(JsonConvert.SerializeObject(
+                    new
+                    {
+                        error = "Token Verification Failed"
+                    }));
+            if (session.CreatedAt.AddSeconds(session.ExpiresIn) >= DateTime.UtcNow)
+                return Forbid(JsonConvert.SerializeObject(
+                    new
+                    {
+                        error = "Token Expired"
+                    }));
+            var newSession = _authService.AddSession(new Session
             {
                 CreatedAt = DateTime.Now,
                 ExpiresIn = (DateTime.Now.AddDays(AuthService.RefreshTokenLifetimeDays) - DateTime.Now).Seconds,
                 Fingerprint = input.fingerprint,
-                IP = session.IP,
+                IPHash = session.IPHash,
                 UserAgent = session.UserAgent,
                 UpdatedAt = DateTime.Now,
                 User = session.User,
-                // RefreshToken = new JwtSecurityToken()
-                // issuer: AuthOptions.ISSUER,
-                // audience: AuthOptions.AUDIENCE,
-                // notBefore: DateTime.Now,
-                // claims: new []
-                // {
-                //     new Claim("type", "refresh"),
-                //     new Claim("user", ), 
-                // }
-                // )
-            };
-            return Ok();
+                RefreshToken = AuthService.GenerateToken(AuthService.RefreshTokenLength)
+            });
+            return Ok(JsonConvert.SerializeObject(new
+            {
+                refreshToken = newSession.Entity.RefreshToken,
+                accessToken = _cryptoService.JwtBuilder
+                    .AddClaim("type", "access")
+                    .AddClaim("jti", AuthService.GenerateToken(AuthService.AccessTokenJtiLength))
+                    .AddClaim("ip",
+                        Base64.ToBase64String(SHA256.Create()
+                            .ComputeHash(HttpContext.Connection.RemoteIpAddress.GetAddressBytes())))
+                    .AddClaim("user", newSession.Entity.User.PublicUID)
+                    .ExpirationTime(DateTime.UtcNow.AddDays(AuthService.RefreshTokenLifetimeDays))
+                    .Encode()
+            }));
         }
 
         private class NumberBan
