@@ -12,6 +12,7 @@ namespace MessengerBackend.RealTime.Protocol
         public PacketType Type;
 
         private const int _metadataSize = 10;
+
         //   _____________________________
         //  |            Header           |
         //  |           6 bytes           |
@@ -20,6 +21,7 @@ namespace MessengerBackend.RealTime.Protocol
         //  |  2 bytes |      4 bytes     |        Anywhere to 25 Kb        |      4 bytes       |
         //  |__________|__________________|_________________________________|____________________|
         public uint Size; // Payload and Checksum size in bytes
+
         public byte[] Payload; // Most likely ProtoBuf encoded data
         // CRC32C checksum is computed in the end
 
@@ -40,17 +42,18 @@ namespace MessengerBackend.RealTime.Protocol
             return data;
         }
     }
-    
-    
+
+
     public enum PacketType : ushort
     {
         // Client
         Authorization = 0x01,
         Register = 0x02,
         OutboundMessage = 0x10,
+
         // Server
         InboundMessage = 0x50,
-        
+
         Ping = 0xFF
     }
 

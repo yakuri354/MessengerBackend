@@ -1,7 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
+using Serilog;
 using Twilio;
 using Twilio.Exceptions;
 using Twilio.Rest.Verify.V2;
@@ -11,27 +11,27 @@ namespace MessengerBackend.Services
 {
     public class VerificationService
     {
+        private static readonly ILogger Logger = Log.ForContext<VerificationService>();
         private readonly TwilioConfig _twilioConfig;
-        public readonly ServiceResource TwilioService;
-        private readonly IConfiguration _configuration;
 
         public readonly double ResendInterval;
+        public readonly ServiceResource TwilioService;
 
         public VerificationService(IConfiguration configuration)
         {
-            _configuration = configuration;
-            ResendInterval = _configuration.GetValue<double>("SMSVerification:ResendInterval");
+            ResendInterval = configuration.GetValue<double>("SMSVerification:ResendInterval");
             _twilioConfig = new TwilioConfig
             {
-                AccountSid = Environment.GetEnvironmentVariable("TWILIO_ACCOUNT_SID"), 
-                AuthToken = Environment.GetEnvironmentVariable("TWILIO_AUTH_TOKEN"),
-                ServiceSid = Environment.GetEnvironmentVariable("TWILIO_SERVICE_SID")
+                AccountSid = configuration["Twilio:AccountSid"],
+                AuthToken = configuration["Twilio:AuthToken"],
+                ServiceSid = configuration["Twilio:ServiceSid"]
             };
+            Logger.Information("Initializing Twilio");
             TwilioClient.Init(_twilioConfig.AccountSid, _twilioConfig.AuthToken);
             TwilioService = ServiceResource.Fetch(_twilioConfig.ServiceSid);
         }
 
-        public async Task<VerificationResult> StartVerificationAsync(string phoneNumber, string channel)
+        public async Task<string> StartVerificationAsync(string phoneNumber, string channel)
         {
             try
             {
@@ -40,15 +40,15 @@ namespace MessengerBackend.Services
                     channel: channel,
                     pathServiceSid: _twilioConfig.ServiceSid
                 );
-                return new VerificationResult { Sid = verificationResource.Sid };
+                return null;
             }
-            catch (TwilioException e)
+            catch (Exception e) when (e is TwilioException || e is ApiException)
             {
-                return new VerificationResult { Error = e.Message };
+                return e.Message;
             }
         }
 
-        public async Task<VerificationResult> CheckVerificationAsync(string phoneNumber, string code)
+        public async Task<string> CheckVerificationAsync(string phoneNumber, string code)
         {
             try
             {
@@ -57,25 +57,15 @@ namespace MessengerBackend.Services
                     code: code,
                     pathServiceSid: _twilioConfig.ServiceSid
                 );
-                return verificationCheckResource.Status == "approved" ?
-                    new VerificationResult { Sid = verificationCheckResource.Sid } :
-                    new VerificationResult { Error = "wrong code" };
+                return verificationCheckResource.Status == "approved" ? null : "wrong code";
             }
-            catch (TwilioException e)
+            catch (Exception e) when (e is TwilioException || e is ApiException )
             {
-                return new VerificationResult { Error = e.Message };
+                return e.Message;
             }
         }
     }
 
-    public class VerificationResult
-    {
-        public bool IsValid => Error != null;
-
-        public string Sid { get; set; }
-
-        public string Error { get; set; }
-    }
 
     public class TwilioConfig
     {

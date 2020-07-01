@@ -1,15 +1,14 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace MessengerBackend.Models
 {
     public class Room
     {
-        public int ID;
-        public RoomType Type;
-        public IEnumerable<User> Users;
-        public IEnumerable<Message> Messages;
+        public int RoomID { get; set; }
+        public IEnumerable<Message> Messages { get; set; }
+        public RoomType Type { get; set; }
+        public IEnumerable<User> Users { get; set; }
         public DateTime DateCreated { get; set; }
     }
 

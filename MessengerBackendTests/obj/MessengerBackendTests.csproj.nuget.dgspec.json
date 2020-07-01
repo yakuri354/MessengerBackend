@@ -40,25 +40,13 @@
       "frameworks": {
         "netcoreapp3.1": {
           "dependencies": {
-            "Base62-Net": {
-              "target": "Package",
-              "version": "[1.1.1, )"
-            },
-            "BouncyCastle": {
-              "target": "Package",
-              "version": "[1.8.6.1, )"
-            },
             "Crc32.NET": {
               "target": "Package",
               "version": "[1.2.0, )"
             },
             "EFCore.NamingConventions": {
               "target": "Package",
-              "version": "[5.0.0-preview5, )"
-            },
-            "Google.Protobuf": {
-              "target": "Package",
-              "version": "[3.12.3, )"
+              "version": "[1.1.0, )"
             },
             "JWT": {
               "target": "Package",
@@ -72,9 +60,15 @@
               "target": "Package",
               "version": "[3.1.5, )"
             },
+            "Microsoft.AspNetCore.Server.Kestrel": {
+              "target": "Package",
+              "version": "[2.2.0, )"
+            },
+            "Microsoft.EntityFrameworkCore": {
+              "target": "Package",
+              "version": "[3.1.5, )"
+            },
             "Microsoft.EntityFrameworkCore.Design": {
-              "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
-              "suppressParent": "All",
               "target": "Package",
               "version": "[3.1.5, )"
             },
@@ -88,7 +82,11 @@
             },
             "Npgsql.EntityFrameworkCore.PostgreSQL": {
               "target": "Package",
-              "version": "[5.0.0-preview5, )"
+              "version": "[3.1.4, )"
+            },
+            "PemUtils": {
+              "target": "Package",
+              "version": "[3.0.0.82, )"
             },
             "Serilog": {
               "target": "Package",
@@ -129,10 +127,6 @@
             "protobuf-net": {
               "target": "Package",
               "version": "[3.0.0, )"
-            },
-            "quickford": {
-              "target": "Package",
-              "version": "[1.1.0, )"
             }
           },
           "imports": [
@@ -193,21 +187,13 @@
       "frameworks": {
         "netcoreapp3.1": {
           "dependencies": {
-            "Base62-Net": {
-              "target": "Package",
-              "version": "[1.1.1, )"
-            },
-            "BouncyCastle": {
-              "target": "Package",
-              "version": "[1.8.6.1, )"
-            },
             "Crc32.NET": {
               "target": "Package",
               "version": "[1.2.0, )"
             },
             "EFCore.NamingConventions": {
               "target": "Package",
-              "version": "[5.0.0-preview5, )"
+              "version": "[1.1.0, )"
             },
             "JWT": {
               "target": "Package",
@@ -218,6 +204,18 @@
               "version": "[7.1.0-beta2, )"
             },
             "Microsoft.AspNetCore.Authentication.JwtBearer": {
+              "target": "Package",
+              "version": "[3.1.5, )"
+            },
+            "Microsoft.AspNetCore.Server.Kestrel": {
+              "target": "Package",
+              "version": "[2.2.0, )"
+            },
+            "Microsoft.EntityFrameworkCore": {
+              "target": "Package",
+              "version": "[3.1.5, )"
+            },
+            "Microsoft.EntityFrameworkCore.Design": {
               "target": "Package",
               "version": "[3.1.5, )"
             },
@@ -235,7 +233,11 @@
             },
             "Npgsql.EntityFrameworkCore.PostgreSQL": {
               "target": "Package",
-              "version": "[5.0.0-preview5, )"
+              "version": "[3.1.4, )"
+            },
+            "PemUtils": {
+              "target": "Package",
+              "version": "[3.0.0.82, )"
             },
             "Serilog": {
               "target": "Package",
@@ -272,10 +274,6 @@
             "nunit": {
               "target": "Package",
               "version": "[3.12.0, )"
-            },
-            "quickford": {
-              "target": "Package",
-              "version": "[1.1.0, )"
             }
           },
           "imports": [

@@ -13,18 +13,18 @@ namespace MessengerBackend.RealTime
 {
     public class RealTimeServer : IDisposable
     {
+        private static readonly ILogger _log = Log.ForContext<RealTimeServer>();
         private readonly CancellationTokenSource _cancellation;
-
-        public static ushort PortV4 { get; private set; } = 7100;
-        public static ushort PortV6 { get; private set; } = 7200;
-        private List<OpenConnection> _connections = new List<OpenConnection>();
+        private readonly List<OpenConnection> _connections = new List<OpenConnection>();
         private readonly ManualResetEvent _shouldAcceptV4 = new ManualResetEvent(false);
         private readonly ManualResetEvent _shouldAcceptV6 = new ManualResetEvent(false);
 
+        // Mostly for unit tests
+        public readonly ManualResetEvent IsListeningV4 = new ManualResetEvent(false);
+        public readonly ManualResetEvent IsListeningV6 = new ManualResetEvent(false);
+
         private Socket _sockV4;
         private Socket _sockV6;
-
-        private static ILogger _log = Log.ForContext<RealTimeServer>();
 
         public RealTimeServer(CancellationTokenSource cancellationTokenSource)
         {
@@ -40,9 +40,22 @@ namespace MessengerBackend.RealTime
             PortV6 = (ushort) portV6;
         }
 
+        public static ushort PortV4 { get; private set; } = 7100;
+        public static ushort PortV6 { get; private set; } = 7200;
+
+        public void Dispose()
+        {
+            _log.Information("Shutting socket server down");
+            _cancellation.Cancel();
+            // Listening thread unblocks and stops because of cancellation check in while loop condition
+            _shouldAcceptV4.Set();
+            _shouldAcceptV6.Set();
+            _sockV4.Close();
+            _sockV6.Close();
+        }
+
         public Task Start()
         {
-            _log.Information("Starting realtime server...");
             return Task.Run(() =>
                 {
                     _log.Debug("Opening sockets");
@@ -97,18 +110,17 @@ namespace MessengerBackend.RealTime
         {
             var globalSocket = (Socket) result.AsyncState;
 
-            var connection = new OpenConnection(globalSocket);
-            connection._logger = Log.ForContext("ConnectionID", connection.ID);
-            _connections.Add(connection);
-
             // Receive packet header and decide buffer length
             var headerBuffer = new byte[6];
-            
-            var socket = globalSocket.EndAccept(result);
-            connection._logger.Information(
+
+            var socket = globalSocket!.EndAccept(result);
+            var connection = new OpenConnection(socket);
+            connection.Logger = Log.ForContext("ConnectionID", connection.UserPublicID);
+            _connections.Add(connection);
+            connection.Logger.Information(
                 "Connection Established; EP: {@RemoteEndPoint}", socket.RemoteEndPoint);
 
-            connection._logger.Debug("Receiving packet header");
+            connection.Logger.Debug("Receiving packet header");
             socket.Receive(headerBuffer, 0, 6, SocketFlags.None);
 
             Packet packet;
@@ -120,13 +132,13 @@ namespace MessengerBackend.RealTime
             }
             catch (Exception e) when (e is SocketException || e is ArgumentOutOfRangeException)
             {
-                connection._logger.Warning("Failed to deserialize packet header");
+                connection.Logger.Warning("Failed to deserialize packet header");
                 // TODO Proper error handling
                 socket.Close();
                 return;
             }
 
-            connection._logger.Debug("Packet length calculated, receiving payload and checksum");
+            connection.Logger.Debug("Packet length calculated, receiving payload and checksum");
             var buffer = new byte[packet.Size];
             Array.Copy(headerBuffer, buffer, headerBuffer.Length);
             socket.Receive(buffer, 6, (int) (packet.Size - 6), SocketFlags.None);
@@ -139,23 +151,9 @@ namespace MessengerBackend.RealTime
                 socket.Send(Encoding.ASCII.GetBytes("PONG"));
                 socket.Close();
             }
+
             // TODO
             socket.Close();
-        }
-        
-        // Mostly for unit tests
-        public readonly ManualResetEvent IsListeningV4 = new ManualResetEvent(false);
-        public readonly ManualResetEvent IsListeningV6 = new ManualResetEvent(false);
-
-        public void Dispose()
-        {
-            _log.Information("Shutting socket server down");
-            _cancellation.Cancel();
-            // Listening thread unblocks and stops because of cancellation check in while loop condition
-            _shouldAcceptV4.Set();
-            _shouldAcceptV6.Set();
-            _sockV4.Close();
-            _sockV6.Close();
         }
     }
 }

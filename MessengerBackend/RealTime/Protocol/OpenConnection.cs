@@ -6,13 +6,14 @@ namespace MessengerBackend.RealTime.Protocol
 {
     public class OpenConnection
     {
-        public Socket Socket { get; }
-        internal ILogger _logger;
-        internal Guid ID;
+        public ILogger Logger; 
+        public string UserPublicID;
 
         public OpenConnection(Socket s)
         {
             Socket = s;
         }
+
+        public readonly Socket Socket;
     }
 }

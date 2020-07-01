@@ -7,19 +7,20 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Base62-Net" Version="1.1.1" />
-    <PackageReference Include="BouncyCastle" Version="1.8.6.1" />
     <PackageReference Include="Crc32.NET" Version="1.2.0" />
-    <PackageReference Include="EFCore.NamingConventions" Version="5.0.0-preview5" />
+    <PackageReference Include="EFCore.NamingConventions" Version="1.1.0" />
     <PackageReference Include="JWT" Version="7.2.1" />
     <PackageReference Include="JWT.Extensions.AspNetCore" Version="7.1.0-beta2" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="3.1.5" />
-    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="5.0.0-preview5" />
+    <PackageReference Include="Microsoft.AspNetCore.Server.Kestrel" Version="2.2.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="3.1.5" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="3.1.5" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="3.1.4" />
     <PackageReference Include="NSwag.AspNetCore" Version="13.6.1" />
     <PackageReference Include="nunit" Version="3.12.0" />
     <PackageReference Include="NUnit3TestAdapter" Version="3.15.1" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.4.0" />
-    <PackageReference Include="quickford" Version="1.1.0" />
+    <PackageReference Include="PemUtils" Version="3.0.0.82" />
     <PackageReference Include="Serilog" Version="2.10.0-dev-01191" />
     <PackageReference Include="Serilog.AspNetCore" Version="3.4.0-dev-00171" />
     <PackageReference Include="Serilog.Extensions.Logging" Version="3.0.2-dev-10280" />

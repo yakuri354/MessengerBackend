@@ -7,3 +7,4 @@ Messengerbackend/appsettings.Secret.json
 /MessengerBackend/bin/
 /MessengerBackendTests/bin/
 /MessengerBackendTests/obj/
+/MessengerBackend/Migrations/
