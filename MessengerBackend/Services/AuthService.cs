@@ -1,5 +1,6 @@
 using System.Linq;
 using System.Threading.Tasks;
+using MessengerBackend.Database;
 using MessengerBackend.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;

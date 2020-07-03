@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Security.Cryptography;
@@ -11,10 +12,10 @@ using JWT.Builder;
 using MessengerBackend.Models;
 using MessengerBackend.Services;
 using MessengerBackend.Utils;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Net.Http.Headers;
-using Twilio.Exceptions;
 
 namespace MessengerBackend.Controllers
 {
@@ -47,9 +48,8 @@ namespace MessengerBackend.Controllers
          * <param name="number">Number</param>
          * <param name="channel">Channel</param>
          * <response code="200">Code sent</response>
-         * <response code="400">Not all fields provided</response>
          * <response code="400">Code sending error</response>
-         * <response code="429">Too frequent attempts</response>
+         * <response code="429">Too many attempts</response>
          */
         [Consumes("application/json")]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -103,12 +103,12 @@ namespace MessengerBackend.Controllers
                     number = "",
                     code = ""
                 });
-
+            
             if (!Regex.Match(input.number, @"^\+[1-9]\d{1,14}$").Success)
                 return BadRequest("bad number");
-            
+
             if (input.code.Length != _verificationService.TwilioService.CodeLength) return Forbid();
-            
+
             var error = await _verificationService.CheckVerificationAsync(input.number, input.code);
             if (error != null) return Forbid();
 
@@ -118,6 +118,8 @@ namespace MessengerBackend.Controllers
                     .ExpirationTime(DateTime.Now.AddMinutes(20))
                     .AddClaim("type", "reg")
                     .AddClaim("num", input.number)
+                    .AddClaim("ip", Convert.ToBase64String(_cryptoService.Sha256
+                        .ComputeHash(HttpContext.Connection.RemoteIpAddress.GetAddressBytes())))
                     .Encode()
             );
         }
@@ -127,34 +129,29 @@ namespace MessengerBackend.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [HttpPost("register")]
+        [Authorize]
         public IActionResult Register()
         {
             var input = MyJsonDeserializer.DeserializeAnonymousType(
-                Request.Body.ToString(), new
+                Request.Body.GetString(), new
                 {
-                    registerToken = "",
                     firstName = "",
                     lastName = "",
                     fingerprint = ""
                 });
-
-            if (input == null) return BadRequest();
-            var token = _cryptoService.JwtBuilder
-                .MustVerifySignature()
-                .Decode<IDictionary<string, string>>(input.registerToken);
-            if (token["type"] != "reg" || !token.ContainsKey("number"))
-                return BadRequest("Token must have \"type\" == \"reg\"");
+            if (HttpContext.User.FindFirst("type").Value != "reg")
+                return BadRequest("Invalid token");
 
             var newSession =
                 _authService.AddSession(new Session
                 {
-                    CreatedAt = DateTime.UtcNow,
                     ExpiresIn = CryptoService.JwtOptions.RefreshTokenLifetimeDays,
                     Fingerprint = input.fingerprint,
                     IPHash = SHA256.Create()
                         .ComputeHash(HttpContext.Connection.RemoteIpAddress.GetAddressBytes()),
                     UserAgent = Request.Headers[HttpRequestHeader.UserAgent.ToString()],
-                    User = _userService.Add(token["number"], input.firstName, input.lastName),
+                    User = _userService.Add(HttpContext.User.FindFirst("num").Value, input.firstName,
+                        input.lastName),
                     UpdatedAt = DateTime.UtcNow,
                     RefreshToken = CryptoService.GenerateRefreshToken()
                 });
@@ -163,7 +160,7 @@ namespace MessengerBackend.Controllers
             {
                 refreshToken = newSession.Entity.RefreshToken,
                 accessToken = _cryptoService.CreateAccessJwt(HttpContext.Connection.RemoteIpAddress,
-                    newSession.Entity.User.PublicUID)
+                    newSession.Entity.User.UserPID)
             }));
         }
 
@@ -198,7 +195,6 @@ namespace MessengerBackend.Controllers
                     }));
             var newSession = _authService.AddSession(new Session
             {
-                CreatedAt = DateTime.Now,
                 ExpiresIn = (DateTime.Now.AddDays(CryptoService.JwtOptions.RefreshTokenLifetimeDays) - DateTime.Now)
                     .Seconds,
                 Fingerprint = input.fingerprint,
@@ -212,7 +208,7 @@ namespace MessengerBackend.Controllers
             {
                 refreshToken = newSession.Entity.RefreshToken,
                 accessToken = _cryptoService.CreateAccessJwt(HttpContext.Connection.RemoteIpAddress,
-                    newSession.Entity.User.PublicUID)
+                    newSession.Entity.User.UserPID)
             }));
         }
 

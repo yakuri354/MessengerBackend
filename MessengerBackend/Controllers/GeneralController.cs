@@ -48,6 +48,7 @@ namespace MessengerBackend.Controllers
             }));
         }
 
+#if USERSA
         [Produces("application/octet-stream")]
         [return: Description("Gets RSA JWT Public Key in the PKCS#1 format")]
         [HttpGet("publicKey")]
@@ -56,8 +57,9 @@ namespace MessengerBackend.Controllers
         {
             return Ok(_cryptoService.PublicKey.ExportRSAPublicKey());
         }
+#endif
     }
-    
+
     [Route("/error")]
     [ApiController]
     public class ErrorController : Controller

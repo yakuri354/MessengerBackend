@@ -1,10 +1,10 @@
+#define USEHMAC
+
 using System;
-using System.Buffers.Text;
 using System.Linq;
-using System.Reflection;
-using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
-using JWT;
+using MessengerBackend.Database;
 using MessengerBackend.Services;
 using MessengerBackend.Utils;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -19,6 +19,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
+using Microsoft.IdentityModel.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Npgsql.Logging;
 using NewtonsoftJsonException = Newtonsoft.Json.JsonException;
@@ -33,18 +34,19 @@ namespace MessengerBackend
         }
 
         public IConfiguration Configuration { get; }
+        private CryptoService _cryptoService;
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddSingleton<CryptoService>();
+            _cryptoService = new CryptoService(Configuration);
+            services.AddSingleton(_cryptoService);
             NpgsqlLogManager.Provider = new SerilogLoggingProvider();
             services.AddDbContext<MessengerDBContext>(builder => builder
                 .UseNpgsql(Configuration["Database:ConnectionString"]
                            ?? throw new ArgumentException("No connection string provided"),
                     o => o.SetPostgresVersion(12, 3)));
 
-            var cryptoService = services.BuildServiceProvider().GetService<CryptoService>();
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(cfg =>
             {
                 cfg.TokenValidationParameters = new TokenValidationParameters
@@ -54,10 +56,16 @@ namespace MessengerBackend
                     ValidateIssuer = true,
                     ValidIssuer = CryptoService.JwtOptions.Issuer,
                     ValidateAudience = true,
+                    ClockSkew = TimeSpan.FromMinutes(1),
                     ValidAudience = CryptoService.JwtOptions.Audience,
+#if USERSA
                     IssuerSigningKey = new RsaSecurityKey(cryptoService.PublicKey)
+#elif USEHMAC
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_cryptoService.HMACKey))
+#endif
                 };
             });
+
 
             services.AddControllersWithViews();
 
@@ -90,8 +98,10 @@ namespace MessengerBackend
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
-                app.UseHttpsRedirection();
+                IdentityModelEventSource.ShowPII = true;
             }
+            else app.UseHttpsRedirection();
+
             app.Use(async (ctx, next) =>
             {
                 await next();
@@ -128,7 +138,19 @@ namespace MessengerBackend
             app.UseAuthentication();
             app.UseAuthorization();
 
+            app.Use(async (ctx, next) =>
+            {
+                if (!ctx.GetEndpoint().RequestDelegate.Method.GetCustomAttributes(typeof(AnyIP), false).Any())
+                {
+                    var ipHash = ctx.User?.FindFirst("ip")?.Value;
+                    if (ipHash != null && !_cryptoService.IPValid(ctx.Connection.RemoteIpAddress, ipHash))
+                    {
+                        ctx.Response.StatusCode = 400;
+                    }
+                }
 
+                await next();
+            });
 
             // TODO Rate limiting
 

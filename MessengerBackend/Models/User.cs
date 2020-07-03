@@ -1,15 +1,17 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using MessengerBackend.Services;
 
 namespace MessengerBackend.Models
 {
     public class User
     {
-        public IEnumerable<Room> Rooms;
+        public IEnumerable<RoomParticipant> RoomsParticipants { get; set; }
 
 
-        public IEnumerable<Session> Sessions;
+        public IEnumerable<Session> Sessions { get; set; }
 
         [Required] [Column(TypeName = "int")] public int UserID { get; set; }
 
@@ -28,22 +30,29 @@ namespace MessengerBackend.Models
         [Column(TypeName = "varchar(256)")] public string Bio { get; set; }
 
         [Required]
-        [Column(TypeName = "char(10)")]
-        public string PublicUID { get; set; }
+        [Column(TypeName = "char(11)")]
+        public string UserPID { get; set; }
+        
+        public DateTime JoinedAt { get; set; }
     }
 
-    public class Bot
-    {
-        [Required] [Column(TypeName = "int")] public int BotID { get; set; }
-
-        [Column(TypeName = "varchar(24)")] public string BotUsername { get; set; }
-
-        public string AvatarUrl { get; set; }
-
-        [Column(TypeName = "varchar(100)")] public string Name { get; set; }
-
-        public string Description { get; set; }
-
-        [Column(TypeName = "char(24)")] public string Token { get; set; }
-    }
+    // Bots are on roadmap, however I am not implementing them now
+    // public class Bot
+    // {
+    //     [Required] [Column(TypeName = "int")] public int BotID { get; set; }
+    //
+    //     [Column(TypeName = "varchar(24)")] public string BotUsername { get; set; }
+    //
+    //     public string AvatarUrl { get; set; }
+    //
+    //     [Column(TypeName = "varchar(100)")] public string Name { get; set; }
+    //
+    //     public string Description { get; set; }
+    //
+    //     [Column(TypeName = "char(24)")] public string Token { get; set; }
+    //     
+    //     [Column(TypeName = "char(11)")] public string BotPID { get; set; }
+    //     
+    //     public DateTime JoinedAt { get; set; }
+    // }
 }

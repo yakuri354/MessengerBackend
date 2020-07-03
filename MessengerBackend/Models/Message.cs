@@ -8,7 +8,7 @@ namespace MessengerBackend.Models
         public Room TargetRoom { get; set; }
         public string Text { get; set; }
         public User Sender { get; set; }
-        public DateTime TimeSent { get; set; }
+        public DateTime SentAt { get; set; }
         public Message ReplyTo { get; set; }
     }
 }

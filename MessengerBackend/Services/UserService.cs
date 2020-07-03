@@ -1,6 +1,6 @@
 ﻿using System.Linq;
+using MessengerBackend.Database;
 using MessengerBackend.Models;
-using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace MessengerBackend.Services
 {
@@ -30,14 +30,14 @@ namespace MessengerBackend.Services
         public User FindOne(string username = null, string uid = null, int id = 0) =>
             _dbContext.Users.FirstOrDefault(u =>
                 u.Username == username && username != null
-                || u.PublicUID == uid && uid != null
+                || u.UserPID == uid && uid != null
                 || u.UserID == id && id != 0);
 
 
         public User FindOneStrict(string username = null, string uid = null, int id = 0) =>
             _dbContext.Users.FirstOrDefault(u =>
                 (u.Username == username || username == null)
-                && (u.PublicUID == uid || uid == null)
+                && (u.UserPID == uid || uid == null)
                 && (u.UserID == id || id == 0));
 
         public void SaveUser(User user) => _dbContext.Users.Attach(user);
