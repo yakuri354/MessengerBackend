@@ -28,13 +28,14 @@ namespace MessengerBackend
 {
     public class Startup
     {
+        private CryptoService _cryptoService;
+
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
         }
 
         public IConfiguration Configuration { get; }
-        private CryptoService _cryptoService;
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
@@ -100,7 +101,10 @@ namespace MessengerBackend
                 app.UseDeveloperExceptionPage();
                 IdentityModelEventSource.ShowPII = true;
             }
-            else app.UseHttpsRedirection();
+            else
+            {
+                app.UseHttpsRedirection();
+            }
 
             app.Use(async (ctx, next) =>
             {
@@ -126,12 +130,12 @@ namespace MessengerBackend
                 {
                     ctx.Response.StatusCode = 400;
                     ctx.Response.ContentType = "application/json";
-                    var json = JsonSerializer.Serialize(new {error = "invalid json", message = e.Message});
+                    var json = JsonSerializer.Serialize(new { error = "invalid json", message = e.Message });
                     await ctx.Response.WriteAsync(json);
                 }
             });
-            // app.UseOpenApi();
-            // app.UseSwaggerUi3();
+            app.UseOpenApi();
+            app.UseSwaggerUi3();
 
             app.UseRouting();
 
@@ -140,13 +144,12 @@ namespace MessengerBackend
 
             app.Use(async (ctx, next) =>
             {
-                if (!ctx.GetEndpoint().RequestDelegate.Method.GetCustomAttributes(typeof(AnyIP), false).Any())
+                if (!ctx?.GetEndpoint()?.RequestDelegate?.Method
+                    .GetCustomAttributes(typeof(AnyIP), false).Any() ?? false)
                 {
                     var ipHash = ctx.User?.FindFirst("ip")?.Value;
                     if (ipHash != null && !_cryptoService.IPValid(ctx.Connection.RemoteIpAddress, ipHash))
-                    {
                         ctx.Response.StatusCode = 400;
-                    }
                 }
 
                 await next();

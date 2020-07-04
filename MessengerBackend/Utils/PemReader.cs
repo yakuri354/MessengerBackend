@@ -13,11 +13,11 @@ namespace MessengerBackend.Utils
 {
     public class PemReader : IDisposable
     {
-        private static readonly int[] RsaIdentifier = {1, 2, 840, 113549, 1, 1, 1};
+        private static readonly int[] RsaIdentifier = { 1, 2, 840, 113549, 1, 1, 1 };
         private readonly bool _disposeStream;
+        private readonly Encoding _encoding;
         private readonly Stream _stream;
         private readonly StringReader _stringReader;
-        private readonly Encoding _encoding;
 
         public PemReader(Stream stream, bool disposeStream = false, Encoding encoding = null)
         {

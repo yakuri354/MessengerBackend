@@ -24,7 +24,7 @@ namespace MessengerBackend.Services
             return _dbContext.Sessions.Where(s => s.RefreshToken == token).FirstOrDefaultAsync();
         }
 
-        public Session GetAndDelete(string token)
+        public Session GetAndDeleteSession(string token)
         {
             var session = GetSession(token).Result;
             if (session == null) return null;
@@ -39,6 +39,5 @@ namespace MessengerBackend.Services
             _dbContext.SaveChanges();
             return s;
         }
-        
     }
 }

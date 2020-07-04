@@ -35,10 +35,13 @@ namespace MessengerBackend.Services
 #endif
         public readonly SHA256 Sha256;
 
-        public bool IPValid(IPAddress realIP, string base64EncodedIP) =>
-            Sha256
+        public bool IPValid(IPAddress realIP, string base64EncodedIP)
+        {
+            return Sha256
                 .ComputeHash(realIP.GetAddressBytes())
                 .SequenceEqual(Convert.FromBase64String(base64EncodedIP));
+        }
+
         public CryptoService(IConfiguration configuration)
         {
             _configuration = configuration;
@@ -61,12 +64,25 @@ namespace MessengerBackend.Services
 #endif
         }
 
-        public static string GenerateRefreshToken() => GenerateToken(JwtOptions.RefreshTokenLength);
+        public static string GenerateRefreshToken()
+        {
+            return GenerateToken(JwtOptions.RefreshTokenLength);
+        }
 
-        private static string GenerateCrockford(int len) => GenerateToken(len, CrockfordCharSet);
-        private static string GenerateJti() => GenerateToken(JwtOptions.AccessTokenJtiLength);
+        private static string GenerateCrockford(int len)
+        {
+            return GenerateToken(len, CrockfordCharSet);
+        }
 
-        public static string GeneratePID(string prefix) => string.Concat(prefix, GenerateCrockford(PIDLength));
+        private static string GenerateJti()
+        {
+            return GenerateToken(JwtOptions.AccessTokenJtiLength);
+        }
+
+        public static string GeneratePID(string prefix)
+        {
+            return string.Concat(prefix, GenerateCrockford(PIDLength));
+        }
 
         public string CreateAccessJwt(IPAddress ip, string uid)
         {
@@ -101,7 +117,7 @@ namespace MessengerBackend.Services
             public const string Audience = "user";
             public const int RefreshTokenLifetimeDays = 30;
             public const int AccessTokenJtiLength = 10;
-            public const int RefreshTokenLength = 20;
+            public const int RefreshTokenLength = 24;
         }
 
         private const int PIDLength = 10;

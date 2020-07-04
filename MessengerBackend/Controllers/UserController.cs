@@ -1,17 +1,14 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using System.Text.Json;
+﻿using System.Text.Json;
 using MessengerBackend.Services;
 using MessengerBackend.Utils;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Mvc;
 using Route = Microsoft.AspNetCore.Mvc.RouteAttribute;
 
 namespace MessengerBackend.Controllers
 {
     [ApiController]
-    [Route("/api/users")]
+    [Microsoft.AspNetCore.Mvc.Route("/api/users")]
     public class UserController : Controller
     {
         private readonly UserService _userService;
@@ -28,7 +25,7 @@ namespace MessengerBackend.Controllers
     }
 
     [ApiController]
-    [Route("/api/users/me")]
+    [Microsoft.AspNetCore.Mvc.Route("/api/users/me")]
     public class MeController : Controller
     {
         private readonly UserService _userService;
@@ -67,25 +64,13 @@ namespace MessengerBackend.Controllers
                 bio = ""
             }, true);
             var user = _userService.FindOneStrict(HttpContext.User.FindFirst("uid").Value);
-            if (input.firstName != null)
-            {
-                user.FirstName = input.firstName;
-            }
+            if (input.firstName != null) user.FirstName = input.firstName;
 
-            if (input.lastName != null)
-            {
-                user.LastName = input.lastName;
-            }
+            if (input.lastName != null) user.LastName = input.lastName;
 
-            if (input.userName != null)
-            {
-                user.Username = input.lastName;
-            }
+            if (input.userName != null) user.Username = input.lastName;
 
-            if (input.bio != null)
-            {
-                user.Bio = input.bio;
-            }
+            if (input.bio != null) user.Bio = input.bio;
             _userService.SaveUser(user);
             return Ok();
         }

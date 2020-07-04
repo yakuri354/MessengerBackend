@@ -59,7 +59,7 @@ namespace MessengerBackend.Services
                 );
                 return verificationCheckResource.Status == "approved" ? null : "wrong code";
             }
-            catch (Exception e) when (e is TwilioException || e is ApiException )
+            catch (Exception e) when (e is TwilioException || e is ApiException)
             {
                 return e.Message;
             }

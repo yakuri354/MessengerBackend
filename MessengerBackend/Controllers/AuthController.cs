@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Security.Cryptography;
@@ -103,14 +102,14 @@ namespace MessengerBackend.Controllers
                     number = "",
                     code = ""
                 });
-            
-            if (!Regex.Match(input.number, @"^\+[1-9]\d{1,14}$").Success)
-                return BadRequest("bad number");
 
-            if (input.code.Length != _verificationService.TwilioService.CodeLength) return Forbid();
-
-            var error = await _verificationService.CheckVerificationAsync(input.number, input.code);
-            if (error != null) return Forbid();
+            // if (!Regex.Match(input.number, @"^\+[1-9]\d{1,14}$").Success)
+            //     return BadRequest("bad number");
+            //
+            // if (input.code.Length != _verificationService.TwilioService.CodeLength) return Forbid();
+            //
+            // var error = await _verificationService.CheckVerificationAsync(input.number, input.code);
+            // if (error != null) return Forbid();
 
 
             return Ok(
@@ -125,7 +124,6 @@ namespace MessengerBackend.Controllers
         }
 
         [Consumes("application/json")]
-        [Produces("application/json")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [HttpPost("register")]
@@ -142,6 +140,11 @@ namespace MessengerBackend.Controllers
             if (HttpContext.User.FindFirst("type").Value != "reg")
                 return BadRequest("Invalid token");
 
+            var newUser = _userService.Add(HttpContext.User.FindFirst("num").Value, input.firstName,
+                input.lastName);
+
+            if (newUser == null) return Forbid();
+
             var newSession =
                 _authService.AddSession(new Session
                 {
@@ -150,8 +153,7 @@ namespace MessengerBackend.Controllers
                     IPHash = SHA256.Create()
                         .ComputeHash(HttpContext.Connection.RemoteIpAddress.GetAddressBytes()),
                     UserAgent = Request.Headers[HttpRequestHeader.UserAgent.ToString()],
-                    User = _userService.Add(HttpContext.User.FindFirst("num").Value, input.firstName,
-                        input.lastName),
+                    User = newUser,
                     UpdatedAt = DateTime.UtcNow,
                     RefreshToken = CryptoService.GenerateRefreshToken()
                 });
@@ -177,7 +179,7 @@ namespace MessengerBackend.Controllers
             });
             var token = Request.Headers[HeaderNames.Authorization];
 
-            var session = _authService.GetAndDelete(token);
+            var session = _authService.GetAndDeleteSession(token);
             if (session == null) return BadRequest();
             if (session.Fingerprint != input.fingerprint
                 || session.IPHash != HttpContext.Connection.RemoteIpAddress.GetAddressBytes()

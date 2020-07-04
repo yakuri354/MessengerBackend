@@ -11,16 +11,16 @@ namespace MessengerBackend.Database
 {
     public class MessengerDBContext : DbContext
     {
+        public MessengerDBContext(DbContextOptions<MessengerDBContext> options) : base(options)
+        {
+        }
+
         // public DbSet<Bot> Bots { get; set; }
         public DbSet<Message> Messages { get; set; }
         public DbSet<Room> Rooms { get; set; }
         public DbSet<Session> Sessions { get; set; }
         public DbSet<User> Users { get; set; }
         public DbSet<RoomParticipant> RoomParticipants { get; set; }
-
-        public MessengerDBContext(DbContextOptions<MessengerDBContext> options) : base(options)
-        {
-        }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -34,8 +34,10 @@ namespace MessengerBackend.Database
                 .HasPostgresEnum<RoomType>();
             modelBuilder.Entity<User>(ub =>
             {
-                ub.ToTable("users").HasIndex(u =>
-                    new {u.Number, u.Username, PublicUID = u.UserPID}).IsUnique();
+                ub.ToTable("users");
+                ub.HasIndex(u => u.Number).IsUnique();
+                ub.HasIndex(u => u.Username).IsUnique();
+                ub.HasIndex(u => u.UserPID).IsUnique();
                 ub.Property(u => u.UserPID).ValueGeneratedOnAdd().HasValueGenerator<PIDGenerator>();
                 ub.Property(u => u.JoinedAt).ValueGeneratedOnAdd().HasValueGenerator<NowGenerator>();
             });
@@ -66,7 +68,7 @@ namespace MessengerBackend.Database
             // EF Core does not support many to many so this is how I implemented it
             modelBuilder.Entity<RoomParticipant>(rpb =>
             {
-                rpb.HasKey(rp => new {rp.RoomID, rp.UserID});
+                rpb.HasKey(rp => new { rp.RoomID, rp.UserID });
                 rpb.HasOne(rp => rp.Room)
                     .WithMany(r => r.Participants)
                     .HasForeignKey(rp => rp.RoomID);
@@ -82,23 +84,29 @@ namespace MessengerBackend.Database
     {
         public class PIDGenerator : ValueGenerator
         {
-            protected override object NextValue(EntityEntry entry) => entry.Entity switch
-            {
-                User _ => CryptoService.GeneratePID("U"),
-                Room _ => CryptoService.GeneratePID("R"),
-                // Bot _ => CryptoService.GeneratePID("B"),
-                _ => throw new ArgumentOutOfRangeException(
-                    $"No PID generation available for {entry.Entity.GetType()}")
-            };
-
             public override bool GeneratesTemporaryValues => false;
+
+            protected override object NextValue(EntityEntry entry)
+            {
+                return entry.Entity switch
+                {
+                    User _ => CryptoService.GeneratePID("U"),
+                    Room _ => CryptoService.GeneratePID("R"),
+                    // Bot _ => CryptoService.GeneratePID("B"),
+                    _ => throw new ArgumentOutOfRangeException(
+                        $"No PID generation available for {entry.Entity.GetType()}")
+                };
+            }
         }
 
         public class NowGenerator : ValueGenerator
         {
-            protected override object NextValue(EntityEntry entry) => DateTime.UtcNow;
-
             public override bool GeneratesTemporaryValues => false;
+
+            protected override object NextValue(EntityEntry entry)
+            {
+                return DateTime.UtcNow;
+            }
         }
     }
 }

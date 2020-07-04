@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using MessengerBackend.Services;
 
 namespace MessengerBackend.Models
 {
@@ -32,7 +31,7 @@ namespace MessengerBackend.Models
         [Required]
         [Column(TypeName = "char(11)")]
         public string UserPID { get; set; }
-        
+
         public DateTime JoinedAt { get; set; }
     }
 
