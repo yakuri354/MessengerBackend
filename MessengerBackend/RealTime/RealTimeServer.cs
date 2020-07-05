@@ -26,10 +26,7 @@ namespace MessengerBackend.RealTime
         private Socket _sockV4;
         private Socket _sockV6;
 
-        public RealTimeServer(CancellationTokenSource cancellationTokenSource)
-        {
-            _cancellation = cancellationTokenSource;
-        }
+        public RealTimeServer(CancellationTokenSource cancellationTokenSource) => _cancellation = cancellationTokenSource;
 
         public RealTimeServer(CancellationTokenSource cancellationTokenSource, int portV4, int portV6)
         {

@@ -30,10 +30,7 @@ namespace MessengerBackend
     {
         private CryptoService _cryptoService;
 
-        public Startup(IConfiguration configuration)
-        {
-            Configuration = configuration;
-        }
+        public Startup(IConfiguration configuration) => Configuration = configuration;
 
         public IConfiguration Configuration { get; }
 
@@ -134,8 +131,8 @@ namespace MessengerBackend
                     await ctx.Response.WriteAsync(json);
                 }
             });
-            app.UseOpenApi();
-            app.UseSwaggerUi3();
+            // app.UseOpenApi();
+            // app.UseSwaggerUi3();
 
             app.UseRouting();
 

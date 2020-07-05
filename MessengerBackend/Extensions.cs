@@ -13,19 +13,10 @@ namespace MessengerBackend
             return reader.ReadToEnd();
         }
 
-        public static string RemoveWhitespace(this string input)
-        {
-            return input.Replace(" ", "");
-        }
+        public static string RemoveWhitespace(this string input) => input.Replace(" ", "");
 
-        public static byte[] ToByteArray(this DerAsnBitString bitString)
-        {
-            return bitString.Encode(null).Skip(1).ToArray();
-        }
+        public static byte[] ToByteArray(this DerAsnBitString bitString) => bitString.Encode(null).Skip(1).ToArray();
 
-        public static T DeserializeAnonymousType<T>(string json, T obj)
-        {
-            return JsonSerializer.Deserialize<T>(json);
-        }
+        public static T DeserializeAnonymousType<T>(string json, T obj) => JsonSerializer.Deserialize<T>(json);
     }
 }

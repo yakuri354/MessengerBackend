@@ -45,6 +45,8 @@ namespace MessengerBackend.Database
             {
                 sb.ToTable("sessions").Property(s => s.CreatedAt).ValueGeneratedOnAdd()
                     .HasValueGenerator<NowGenerator>();
+                sb.Property(s => s.RefreshToken).ValueGeneratedOnAdd()
+                    .HasValueGenerator<RefreshTokenGenerator>();
                 sb.HasOne(s => s.User).WithMany(u => u.Sessions);
             });
             modelBuilder.Entity<Message>(mb =>
@@ -86,27 +88,27 @@ namespace MessengerBackend.Database
         {
             public override bool GeneratesTemporaryValues => false;
 
-            protected override object NextValue(EntityEntry entry)
+            protected override object NextValue(EntityEntry entry) => entry.Entity switch
             {
-                return entry.Entity switch
-                {
-                    User _ => CryptoService.GeneratePID("U"),
-                    Room _ => CryptoService.GeneratePID("R"),
-                    // Bot _ => CryptoService.GeneratePID("B"),
-                    _ => throw new ArgumentOutOfRangeException(
-                        $"No PID generation available for {entry.Entity.GetType()}")
-                };
-            }
+                User _ => CryptoService.GeneratePID("U"),
+                Room _ => CryptoService.GeneratePID("R"),
+                // Bot _ => CryptoService.GeneratePID("B"),
+                _ => throw new ArgumentOutOfRangeException(
+                    $"No PID generation available for {entry.Entity.GetType()}")
+            };
+        }
+
+        public class RefreshTokenGenerator : ValueGenerator
+        {
+            public override bool GeneratesTemporaryValues => false;
+
+            protected override object NextValue(EntityEntry entry) => CryptoService.GenerateRefreshToken();
         }
 
         public class NowGenerator : ValueGenerator
         {
             public override bool GeneratesTemporaryValues => false;
-
-            protected override object NextValue(EntityEntry entry)
-            {
-                return DateTime.UtcNow;
-            }
+            protected override object NextValue(EntityEntry entry) => DateTime.UtcNow;
         }
     }
 }

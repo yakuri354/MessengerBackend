@@ -35,12 +35,10 @@ namespace MessengerBackend.Services
 #endif
         public readonly SHA256 Sha256;
 
-        public bool IPValid(IPAddress realIP, string base64EncodedIP)
-        {
-            return Sha256
+        public bool IPValid(IPAddress realIP, string base64EncodedIP) =>
+            Sha256
                 .ComputeHash(realIP.GetAddressBytes())
                 .SequenceEqual(Convert.FromBase64String(base64EncodedIP));
-        }
 
         public CryptoService(IConfiguration configuration)
         {
@@ -64,29 +62,16 @@ namespace MessengerBackend.Services
 #endif
         }
 
-        public static string GenerateRefreshToken()
-        {
-            return GenerateToken(JwtOptions.RefreshTokenLength);
-        }
+        public static string GenerateRefreshToken() => GenerateToken(JwtOptions.RefreshTokenLength);
 
-        private static string GenerateCrockford(int len)
-        {
-            return GenerateToken(len, CrockfordCharSet);
-        }
+        private static string GenerateCrockford(int len) => GenerateToken(len, CrockfordCharSet);
 
-        private static string GenerateJti()
-        {
-            return GenerateToken(JwtOptions.AccessTokenJtiLength);
-        }
+        private static string GenerateJti() => GenerateToken(JwtOptions.AccessTokenJtiLength);
 
-        public static string GeneratePID(string prefix)
-        {
-            return string.Concat(prefix, GenerateCrockford(PIDLength));
-        }
+        public static string GeneratePID(string prefix) => string.Concat(prefix, GenerateCrockford(PIDLength));
 
-        public string CreateAccessJwt(IPAddress ip, string uid)
-        {
-            return JwtBuilder
+        public string CreateAccessJwt(IPAddress ip, string uid) =>
+            JwtBuilder
                 .AddClaim("type", "access")
                 .AddClaim("jti", GenerateJti())
                 .AddClaim("ip",
@@ -95,7 +80,6 @@ namespace MessengerBackend.Services
                 .AddClaim("uid", uid)
                 .ExpirationTime(DateTime.UtcNow.AddDays(JwtOptions.RefreshTokenLifetimeDays))
                 .Encode();
-        }
 
         private static string GenerateToken(int length, string charset = CharSet)
         {

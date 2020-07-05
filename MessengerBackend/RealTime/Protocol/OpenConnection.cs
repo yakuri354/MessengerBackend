@@ -9,9 +9,6 @@ namespace MessengerBackend.RealTime.Protocol
         public ILogger Logger;
         public string UserPublicID;
 
-        public OpenConnection(Socket s)
-        {
-            Socket = s;
-        }
+        public OpenConnection(Socket s) => Socket = s;
     }
 }

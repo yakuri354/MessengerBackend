@@ -26,10 +26,7 @@ namespace MessengerBackend.Utils
             _encoding = encoding ?? Encoding.UTF8;
         }
 
-        public PemReader(StringReader stringReader)
-        {
-            _stringReader = stringReader;
-        }
+        public PemReader(StringReader stringReader) => _stringReader = stringReader;
 
         public void Dispose()
         {

@@ -13,15 +13,9 @@ namespace MessengerBackend.Controllers
     {
         private readonly UserService _userService;
 
-        public UserController(UserService userService)
-        {
-            _userService = userService;
-        }
+        public UserController(UserService userService) => _userService = userService;
 
-        public IActionResult SearchForUser()
-        {
-            return Ok();
-        }
+        public IActionResult SearchForUser() => Ok();
     }
 
     [ApiController]
@@ -30,10 +24,7 @@ namespace MessengerBackend.Controllers
     {
         private readonly UserService _userService;
 
-        public MeController(UserService userService)
-        {
-            _userService = userService;
-        }
+        public MeController(UserService userService) => _userService = userService;
 
         [Authorize]
         [HttpGet("getProfile")]

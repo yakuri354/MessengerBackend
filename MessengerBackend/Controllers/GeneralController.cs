@@ -16,16 +16,10 @@ namespace MessengerBackend.Controllers
     {
         private readonly CryptoService _cryptoService;
 
-        public GeneralController(CryptoService cryptoService)
-        {
-            _cryptoService = cryptoService;
-        }
+        public GeneralController(CryptoService cryptoService) => _cryptoService = cryptoService;
 
         [HttpGet]
-        public IActionResult Index()
-        {
-            return View();
-        }
+        public IActionResult Index() => View();
 
         [HttpGet("getConnPrefs")]
         [Produces("application/json")]
@@ -65,15 +59,12 @@ namespace MessengerBackend.Controllers
     public class ErrorController : Controller
     {
         [Route("404")]
-        public IActionResult PageNotFound()
-        {
+        public IActionResult PageNotFound() =>
             // var originalPath = "unknown";
             // if (HttpContext.Items.ContainsKey("originalPath"))
             // {
             //     originalPath = HttpContext.Items["originalPath"] as string;
             // }
-
-            return View();
-        }
+            View();
     }
 }

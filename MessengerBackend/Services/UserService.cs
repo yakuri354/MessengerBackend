@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using MessengerBackend.Database;
 using MessengerBackend.Models;
 using Microsoft.EntityFrameworkCore;
@@ -10,10 +11,7 @@ namespace MessengerBackend.Services
     {
         private readonly MessengerDBContext _dbContext;
 
-        public UserService(MessengerDBContext dbContext)
-        {
-            _dbContext = dbContext;
-        }
+        public UserService(MessengerDBContext dbContext) => _dbContext = dbContext;
 
         public User Add(string number, string firstName, string lastName)
         {
@@ -36,19 +34,22 @@ namespace MessengerBackend.Services
             }
         }
 
-        public User FindOne(string username = null, string uid = null, int id = 0)
+        public User FindOne(string username = null, string uid = null, int id = 0, string number = null)
         {
             return _dbContext.Users.FirstOrDefault(u =>
                 u.Username == username && username != null
+                || u.Number == number && number != null
                 || u.UserPID == uid && uid != null
                 || u.UserID == id && id != 0);
         }
 
 
-        public User FindOneStrict(string username = null, string uid = null, int id = 0)
+        public User FindOneStrict(string username = null, string uid = null, int id = 0, string number = null)
         {
+            if (username == null && uid == null && id == 0 && number == null) throw new ArgumentNullException();
             return _dbContext.Users.FirstOrDefault(u =>
                 (u.Username == username || username == null)
+                && (u.Number == number || number == null)
                 && (u.UserPID == uid || uid == null)
                 && (u.UserID == id || id == 0));
         }
@@ -56,6 +57,7 @@ namespace MessengerBackend.Services
         public void SaveUser(User user)
         {
             _dbContext.Users.Attach(user);
+            _dbContext.SaveChanges();
         }
     }
 }

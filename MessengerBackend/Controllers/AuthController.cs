@@ -25,7 +25,6 @@ namespace MessengerBackend.Controllers
         private readonly AuthService _authService;
         private readonly CryptoService _cryptoService;
 
-
         private readonly List<NumberBan> _numberBans = new List<NumberBan>();
         private readonly UserService _userService;
         private readonly VerificationService _verificationService;
@@ -166,6 +165,34 @@ namespace MessengerBackend.Controllers
             }));
         }
 
+        [HttpPost("login")]
+        public IActionResult Login()
+        {
+            var input = MyJsonDeserializer.DeserializeAnonymousType(
+                Request.Body.GetString(), new
+            {
+                fingerprint = ""
+            });
+            var user = _userService.FindOneStrict(number: HttpContext?.User?.FindFirst("num").Value);
+            if (user == null) return Forbid();
+            var newSession = _authService.AddSession(new Session
+            {
+                ExpiresIn = CryptoService.JwtOptions.RefreshTokenLifetimeDays,
+                Fingerprint = input.fingerprint,
+                IPHash = SHA256.Create()
+                    .ComputeHash(HttpContext!.Connection.RemoteIpAddress.GetAddressBytes()),
+                UserAgent = Request.Headers[HttpRequestHeader.UserAgent.ToString()],
+                User = user,
+                UpdatedAt = DateTime.UtcNow
+            });
+            return Ok(JsonSerializer.Serialize(new
+            {
+                refreshToken = newSession.Entity.RefreshToken,
+                accessToken = _cryptoService.CreateAccessJwt(HttpContext.Connection.RemoteIpAddress,
+                    newSession.Entity.User.UserPID)
+            }));
+        }
+
         [Consumes("application/json")]
         [Produces("application/json")]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -182,15 +209,16 @@ namespace MessengerBackend.Controllers
             var session = _authService.GetAndDeleteSession(token);
             if (session == null) return BadRequest();
             if (session.Fingerprint != input.fingerprint
-                || session.IPHash != HttpContext.Connection.RemoteIpAddress.GetAddressBytes()
-                || session.UserAgent != Request.Headers["User-Agent"])
-                return Forbid(JsonSerializer.Serialize(
+                // || session.IPHash != HttpContext.Connection.RemoteIpAddress.GetAddressBytes()
+                // || session.UserAgent != Request.Headers["User-Agent"]
+                    )
+                return ForbidResponse(JsonSerializer.Serialize(
                     new
                     {
                         error = "Token Verification Failed"
                     }));
             if (session.CreatedAt.AddSeconds(session.ExpiresIn) >= DateTime.UtcNow)
-                return Forbid(JsonSerializer.Serialize(
+                return ForbidResponse(JsonSerializer.Serialize(
                     new
                     {
                         error = "Token Expired"
@@ -213,6 +241,8 @@ namespace MessengerBackend.Controllers
                     newSession.Entity.User.UserPID)
             }));
         }
+
+        private static ObjectResult ForbidResponse(string response) => new ObjectResult(response) {StatusCode = 403};
 
         private class NumberBan
         {
