@@ -1,6 +1,5 @@
 ﻿using System.IO;
 using System.Linq;
-using System.Text.Json;
 using DerConverter.Asn.KnownTypes;
 
 namespace MessengerBackend
@@ -17,6 +16,7 @@ namespace MessengerBackend
 
         public static byte[] ToByteArray(this DerAsnBitString bitString) => bitString.Encode(null).Skip(1).ToArray();
 
-        public static T DeserializeAnonymousType<T>(string json, T obj) => JsonSerializer.Deserialize<T>(json);
+        public static bool EqualsAnyString(this string self, params string[] args) =>
+            args.Any(arg => arg.Equals(self));
     }
 }

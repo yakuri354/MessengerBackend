@@ -34,30 +34,23 @@ namespace MessengerBackend.Services
             }
         }
 
-        public User FindOne(string username = null, string uid = null, int id = 0, string number = null)
-        {
-            return _dbContext.Users.FirstOrDefault(u =>
-                u.Username == username && username != null
-                || u.Number == number && number != null
-                || u.UserPID == uid && uid != null
-                || u.UserID == id && id != 0);
-        }
+        public User FirstOrDefault(Func<User, bool> input) => _dbContext.Users.FirstOrDefault(input);
 
-
-        public User FindOneStrict(string username = null, string uid = null, int id = 0, string number = null)
+        public bool SaveUser(User user)
         {
-            if (username == null && uid == null && id == 0 && number == null) throw new ArgumentNullException();
-            return _dbContext.Users.FirstOrDefault(u =>
-                (u.Username == username || username == null)
-                && (u.Number == number || number == null)
-                && (u.UserPID == uid || uid == null)
-                && (u.UserID == id || id == 0));
-        }
-
-        public void SaveUser(User user)
-        {
-            _dbContext.Users.Attach(user);
-            _dbContext.SaveChanges();
+            try
+            {
+                _dbContext.Users.Attach(user);
+                _dbContext.SaveChanges();
+                return true;
+            }
+            catch (DbUpdateException e)
+                when ((e.InnerException as PostgresException)?.SqlState.EqualsAnyString(
+                    PostgresErrorCodes.UniqueViolation,
+                    PostgresErrorCodes.StringDataRightTruncation) ?? false)
+            {
+                return false;
+            }
         }
     }
 }

@@ -127,8 +127,8 @@ namespace MessengerBackend
                 {
                     ctx.Response.StatusCode = 400;
                     ctx.Response.ContentType = "application/json";
-                    var json = JsonSerializer.Serialize(new { error = "invalid json", message = e.Message });
-                    await ctx.Response.WriteAsync(json);
+                    await ctx.Response.WriteAsync(JsonSerializer.Serialize(new
+                        {error = "invalid json", message = e.Message}));
                 }
             });
             // app.UseOpenApi();

@@ -1,5 +1,4 @@
-﻿using System.Text.Json;
-using MessengerBackend.Services;
+﻿using MessengerBackend.Services;
 using MessengerBackend.Utils;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -20,6 +19,7 @@ namespace MessengerBackend.Controllers
 
     [ApiController]
     [Microsoft.AspNetCore.Mvc.Route("/api/users/me")]
+    [Produces("application/json")]
     public class MeController : Controller
     {
         private readonly UserService _userService;
@@ -28,23 +28,27 @@ namespace MessengerBackend.Controllers
 
         [Authorize]
         [HttpGet("getProfile")]
+        [Produces("application/json")]
         public IActionResult Me()
         {
-            var user = _userService.FindOneStrict(uid: HttpContext.User.FindFirst("uid").Value);
+            var user = _userService.FirstOrDefault(
+                u => u.UserPID == HttpContext.User.FindFirst("uid").Value);
             if (user == null) return NotFound();
-            return Ok(JsonSerializer.Serialize(new
+            return Ok(new
             {
-                username = user.Username,
+                username = user.Username ?? "",
                 firstName = user.FirstName,
                 lastName = user.LastName,
                 number = user.Number,
                 bio = user.Bio ?? "",
                 avatarUrl = user.AvatarUrl ?? ""
-            }));
+            });
         }
 
         [Authorize]
         [HttpPost("editProfile")]
+        [Consumes("application/json")]
+        [Produces("application/json")]
         public IActionResult EditProfile()
         {
             var input = MyJsonDeserializer.DeserializeAnonymousType(Request.Body.GetString(), new
@@ -54,7 +58,12 @@ namespace MessengerBackend.Controllers
                 userName = "",
                 bio = ""
             }, true);
-            var user = _userService.FindOneStrict(HttpContext.User.FindFirst("uid").Value);
+            if (input == null || input.firstName == null && input.lastName == null && input.userName == null &&
+                input.bio == null)
+                return BadRequest();
+            var user = _userService.FirstOrDefault(
+                u => u.UserPID == HttpContext.User.FindFirst("uid").Value);
+            if (user == null) return NotFound();
             if (input.firstName != null) user.FirstName = input.firstName;
 
             if (input.lastName != null) user.LastName = input.lastName;
@@ -62,8 +71,9 @@ namespace MessengerBackend.Controllers
             if (input.userName != null) user.Username = input.lastName;
 
             if (input.bio != null) user.Bio = input.bio;
-            _userService.SaveUser(user);
-            return Ok();
+            if (_userService.SaveUser(user))
+                return Ok();
+            return Forbid();
         }
     }
 }

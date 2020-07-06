@@ -78,7 +78,7 @@ namespace MessengerBackend.Services
                     Convert.ToBase64String(Sha256
                         .ComputeHash(ip.GetAddressBytes())))
                 .AddClaim("uid", uid)
-                .ExpirationTime(DateTime.UtcNow.AddDays(JwtOptions.RefreshTokenLifetimeDays))
+                .ExpirationTime(DateTime.UtcNow.AddMinutes(JwtOptions.AccessTokenLifetimeMinutes))
                 .Encode();
 
         private static string GenerateToken(int length, string charset = CharSet)
@@ -100,6 +100,7 @@ namespace MessengerBackend.Services
             public const string Issuer = "backend";
             public const string Audience = "user";
             public const int RefreshTokenLifetimeDays = 30;
+            public const int AccessTokenLifetimeMinutes = 20;
             public const int AccessTokenJtiLength = 10;
             public const int RefreshTokenLength = 24;
         }

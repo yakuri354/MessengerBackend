@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Security.Cryptography;
-using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Timers;
@@ -102,13 +101,13 @@ namespace MessengerBackend.Controllers
                     code = ""
                 });
 
-            // if (!Regex.Match(input.number, @"^\+[1-9]\d{1,14}$").Success)
-            //     return BadRequest("bad number");
-            //
-            // if (input.code.Length != _verificationService.TwilioService.CodeLength) return Forbid();
-            //
-            // var error = await _verificationService.CheckVerificationAsync(input.number, input.code);
-            // if (error != null) return Forbid();
+            if (!Regex.Match(input.number, @"^\+[1-9]\d{1,14}$").Success)
+                return BadRequest("bad number");
+            
+            if (input.code.Length != _verificationService.TwilioService.CodeLength) return Forbid();
+            
+            var error = await _verificationService.CheckVerificationAsync(input.number, input.code);
+            if (error != null) return Forbid();
 
 
             return Ok(
@@ -123,6 +122,7 @@ namespace MessengerBackend.Controllers
         }
 
         [Consumes("application/json")]
+        [Produces("application/json")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [HttpPost("register")]
@@ -151,46 +151,48 @@ namespace MessengerBackend.Controllers
                     Fingerprint = input.fingerprint,
                     IPHash = SHA256.Create()
                         .ComputeHash(HttpContext.Connection.RemoteIpAddress.GetAddressBytes()),
-                    UserAgent = Request.Headers[HttpRequestHeader.UserAgent.ToString()],
+                    UserAgent = Request.Headers["User-Agent"],
                     User = newUser,
                     UpdatedAt = DateTime.UtcNow,
                     RefreshToken = CryptoService.GenerateRefreshToken()
                 });
 
-            return Ok(JsonSerializer.Serialize(new
+            return Ok(new
             {
                 refreshToken = newSession.Entity.RefreshToken,
                 accessToken = _cryptoService.CreateAccessJwt(HttpContext.Connection.RemoteIpAddress,
                     newSession.Entity.User.UserPID)
-            }));
+            });
         }
 
         [HttpPost("login")]
+        [Produces("application/json")]
+        [Consumes("application/json")]
         public IActionResult Login()
         {
             var input = MyJsonDeserializer.DeserializeAnonymousType(
                 Request.Body.GetString(), new
-            {
-                fingerprint = ""
-            });
-            var user = _userService.FindOneStrict(number: HttpContext?.User?.FindFirst("num").Value);
-            if (user == null) return Forbid();
+                {
+                    fingerprint = ""
+                });
+            var user = _userService.FirstOrDefault(u => u.Number == HttpContext?.User?.FindFirst("num").Value);
+            if (user == null) return NotFound();
             var newSession = _authService.AddSession(new Session
             {
                 ExpiresIn = CryptoService.JwtOptions.RefreshTokenLifetimeDays,
                 Fingerprint = input.fingerprint,
                 IPHash = SHA256.Create()
                     .ComputeHash(HttpContext!.Connection.RemoteIpAddress.GetAddressBytes()),
-                UserAgent = Request.Headers[HttpRequestHeader.UserAgent.ToString()],
+                UserAgent = Request.Headers["User-Agent"],
                 User = user,
                 UpdatedAt = DateTime.UtcNow
             });
-            return Ok(JsonSerializer.Serialize(new
+            return Ok(new
             {
                 refreshToken = newSession.Entity.RefreshToken,
                 accessToken = _cryptoService.CreateAccessJwt(HttpContext.Connection.RemoteIpAddress,
                     newSession.Entity.User.UserPID)
-            }));
+            });
         }
 
         [Consumes("application/json")]
@@ -211,18 +213,18 @@ namespace MessengerBackend.Controllers
             if (session.Fingerprint != input.fingerprint
                 // || session.IPHash != HttpContext.Connection.RemoteIpAddress.GetAddressBytes()
                 // || session.UserAgent != Request.Headers["User-Agent"]
-                    )
-                return ForbidResponse(JsonSerializer.Serialize(
+            )
+                return ForbidResponse(
                     new
                     {
                         error = "Token Verification Failed"
-                    }));
+                    });
             if (session.CreatedAt.AddSeconds(session.ExpiresIn) >= DateTime.UtcNow)
-                return ForbidResponse(JsonSerializer.Serialize(
+                return ForbidResponse(
                     new
                     {
                         error = "Token Expired"
-                    }));
+                    });
             var newSession = _authService.AddSession(new Session
             {
                 ExpiresIn = (DateTime.Now.AddDays(CryptoService.JwtOptions.RefreshTokenLifetimeDays) - DateTime.Now)
@@ -234,15 +236,15 @@ namespace MessengerBackend.Controllers
                 User = session.User,
                 RefreshToken = CryptoService.GenerateRefreshToken()
             });
-            return Ok(JsonSerializer.Serialize(new
+            return Ok(new
             {
                 refreshToken = newSession.Entity.RefreshToken,
                 accessToken = _cryptoService.CreateAccessJwt(HttpContext.Connection.RemoteIpAddress,
                     newSession.Entity.User.UserPID)
-            }));
+            });
         }
 
-        private static ObjectResult ForbidResponse(string response) => new ObjectResult(response) {StatusCode = 403};
+        private static ObjectResult ForbidResponse(object response) => new ObjectResult(response) {StatusCode = 403};
 
         private class NumberBan
         {

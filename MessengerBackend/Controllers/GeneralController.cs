@@ -2,7 +2,6 @@
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System.Text.Json;
 using MessengerBackend.RealTime;
 using MessengerBackend.Services;
 using Microsoft.AspNetCore.Http;
@@ -28,7 +27,7 @@ namespace MessengerBackend.Controllers
         public IActionResult GetConnectionPrefs()
         {
             var host = Dns.GetHostEntry(Dns.GetHostName());
-            return Ok(JsonSerializer.Serialize(new
+            return Ok(new
             {
                 realTimeServerIPv4 =
                     host.AddressList.FirstOrDefault(ip =>
@@ -39,7 +38,7 @@ namespace MessengerBackend.Controllers
                         ip.AddressFamily == AddressFamily.InterNetworkV6)?.ToString() ?? "unknown",
                 realTimePortIPv4 = RealTimeServer.PortV4.ToString(),
                 realTimePortIPv6 = RealTimeServer.PortV6.ToString()
-            }));
+            });
         }
 
 #if USERSA

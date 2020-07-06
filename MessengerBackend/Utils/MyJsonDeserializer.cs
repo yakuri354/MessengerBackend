@@ -9,6 +9,7 @@ namespace MessengerBackend.Utils
         {
             var parsedJson = JsonConvert.DeserializeObject<T>(json);
             if (nullable) return parsedJson;
+            if (parsedJson == null) throw new JsonException("no input provided");
             foreach (var propertyInfo in typeof(T).GetProperties())
                 if (propertyInfo.GetValue(parsedJson) == null)
                     throw new JsonException($"field '{propertyInfo.Name}' is null");
