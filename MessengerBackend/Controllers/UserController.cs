@@ -1,4 +1,5 @@
-﻿using MessengerBackend.Services;
+﻿using MessengerBackend.Errors;
+using MessengerBackend.Services;
 using MessengerBackend.Utils;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -27,7 +28,7 @@ namespace MessengerBackend.Controllers
         public MeController(UserService userService) => _userService = userService;
 
         [Authorize]
-        [HttpGet("getProfile")]
+        [HttpGet("profile")]
         [Produces("application/json")]
         public IActionResult Me()
         {
@@ -46,7 +47,7 @@ namespace MessengerBackend.Controllers
         }
 
         [Authorize]
-        [HttpPost("editProfile")]
+        [HttpPost("profile")]
         [Consumes("application/json")]
         [Produces("application/json")]
         public IActionResult EditProfile()
@@ -60,7 +61,7 @@ namespace MessengerBackend.Controllers
             }, true);
             if (input == null || input.firstName == null && input.lastName == null && input.userName == null &&
                 input.bio == null)
-                return BadRequest();
+                throw new JsonParseException("No changes provided");
             var user = _userService.FirstOrDefault(
                 u => u.UserPID == HttpContext.User.FindFirst("uid").Value);
             if (user == null) return NotFound();

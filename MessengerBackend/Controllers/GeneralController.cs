@@ -1,10 +1,4 @@
-﻿using System.ComponentModel;
-using System.Linq;
-using System.Net;
-using System.Net.Sockets;
-using MessengerBackend.RealTime;
-using MessengerBackend.Services;
-using Microsoft.AspNetCore.Http;
+﻿using MessengerBackend.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace MessengerBackend.Controllers
@@ -20,37 +14,37 @@ namespace MessengerBackend.Controllers
         [HttpGet]
         public IActionResult Index() => View();
 
-        [HttpGet("getConnPrefs")]
-        [Produces("application/json")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [return: Description("Realtime server IP and port")]
-        public IActionResult GetConnectionPrefs()
-        {
-            var host = Dns.GetHostEntry(Dns.GetHostName());
-            return Ok(new
-            {
-                realTimeServerIPv4 =
-                    host.AddressList.FirstOrDefault(ip =>
-                        ip.AddressFamily == AddressFamily.InterNetwork)?.ToString() ?? "unknown",
+        // [HttpGet("getConnPrefs")]
+        // [Produces("application/json")]
+        // [ProducesResponseType(StatusCodes.Status200OK)]
+        // [return: Description("Realtime server IP and port")]
+        // public IActionResult GetConnectionPrefs()
+        // {
+        //     var host = Dns.GetHostEntry(Dns.GetHostName());
+        //     return Ok(new
+        //     {
+        //         realTimeServerIPv4 =
+        //             host.AddressList.FirstOrDefault(ip =>
+        //                 ip.AddressFamily == AddressFamily.InterNetwork)?.ToString() ?? "unknown",
+        //
+        //         realTimeServerIPv6 =
+        //             host.AddressList.FirstOrDefault(ip =>
+        //                 ip.AddressFamily == AddressFamily.InterNetworkV6)?.ToString() ?? "unknown",
+        //         realTimePortIPv4 = RealTimeServer.PortV4,
+        //         realTimePortIPv6 = RealTimeServer.PortV6
+        //     });
+        // }
 
-                realTimeServerIPv6 =
-                    host.AddressList.FirstOrDefault(ip =>
-                        ip.AddressFamily == AddressFamily.InterNetworkV6)?.ToString() ?? "unknown",
-                realTimePortIPv4 = RealTimeServer.PortV4.ToString(),
-                realTimePortIPv6 = RealTimeServer.PortV6.ToString()
-            });
-        }
-
-#if USERSA
-        [Produces("application/octet-stream")]
-        [return: Description("Gets RSA JWT Public Key in the PKCS#1 format")]
-        [HttpGet("publicKey")]
-        // Same
-        public IActionResult GetPublicKey()
-        {
-            return Ok(_cryptoService.PublicKey.ExportRSAPublicKey());
-        }
-#endif
+// #if USERSA
+//         [Produces("application/octet-stream")]
+//         [return: Description("Gets RSA JWT Public Key in the PKCS#1 format")]
+//         [HttpGet("publicKey")]
+//         // Same
+//         public IActionResult GetPublicKey()
+//         {
+//             return Ok(_cryptoService.PublicKey.ExportRSAPublicKey());
+//         }
+// #endif
     }
 
     [Route("/error")]

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Linq;
 
 namespace MessengerBackend.Models
 {
@@ -11,6 +12,7 @@ namespace MessengerBackend.Models
         public IEnumerable<Message> Messages { get; set; }
         public RoomType Type { get; set; }
         public IEnumerable<RoomParticipant> Participants { get; set; }
+        [NotMapped] public IEnumerable<User> Users => from p in Participants select p.User;
         public DateTime CreatedAt { get; set; }
         public string Name { get; set; }
         public string RoomAvatar { get; set; }

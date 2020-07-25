@@ -1,19 +1,15 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
 using System.Security.Cryptography;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using System.Timers;
-using JWT.Builder;
 using MessengerBackend.Models;
 using MessengerBackend.Services;
 using MessengerBackend.Utils;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Primitives;
 using Microsoft.Net.Http.Headers;
+using PhoneNumbers;
 
 namespace MessengerBackend.Controllers
 {
@@ -23,8 +19,8 @@ namespace MessengerBackend.Controllers
     {
         private readonly AuthService _authService;
         private readonly CryptoService _cryptoService;
+        private readonly PhoneNumberHelper _phoneHelper = new PhoneNumberHelper();
 
-        private readonly List<NumberBan> _numberBans = new List<NumberBan>();
         private readonly UserService _userService;
         private readonly VerificationService _verificationService;
 
@@ -39,6 +35,8 @@ namespace MessengerBackend.Controllers
             _authService = authService;
             _cryptoService = cryptoService;
         }
+
+        private PhoneNumberUtil _phoneNumberUtil => _phoneHelper.phoneNumberUtil;
 
         /**
          * <summary>Sends a code to specified number via specified channel</summary>
@@ -60,35 +58,15 @@ namespace MessengerBackend.Controllers
                     number = "",
                     channel = ""
                 });
+            var number = _phoneHelper.ParseNumber(input.number);
 
-            if (!Regex.Match(input.number, @"^\+[1-9]\d{1,14}$").Success)
-                return BadRequest("bad number");
-            var currentBan = _numberBans.FirstOrDefault(q => q.Number == input.number);
-            if (currentBan != null)
-            {
-                Response.Headers.Add("Retry-After", (currentBan.ExpiresAt - DateTime.Now).Seconds.ToString());
-                return new StatusCodeResult((int) HttpStatusCode.TooManyRequests);
-            }
-
-            var error = await _verificationService.StartVerificationAsync(input.number, input.channel);
-            if (error != null) return BadRequest(error);
-
-            var ban = new NumberBan // TODO FIXME
-            {
-                Number = input.number,
-                ExpirationTimer = new Timer(_verificationService.ResendInterval),
-                ExpiresAt = DateTime.Now.AddSeconds(_verificationService.ResendInterval)
-            };
-
-            _numberBans.Add(ban);
-            ban.ExpirationTimer.Elapsed += (source, e) => { _numberBans.Remove(ban); };
-            ban.ExpirationTimer.Enabled = true;
+            await _verificationService.StartVerificationAsync(number, input.channel);
 
             return Ok();
         }
 
         [Consumes("application/json")]
-        [Produces("text/plain")]
+        [Produces("application/json")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [HttpPost("verifyCode")]
@@ -100,25 +78,16 @@ namespace MessengerBackend.Controllers
                     number = "",
                     code = ""
                 });
+            var formattedNumber = _phoneHelper.ParseNumber(input.number);
 
-            if (!Regex.Match(input.number, @"^\+[1-9]\d{1,14}$").Success)
-                return BadRequest("bad number");
-            
-            if (input.code.Length != _verificationService.TwilioService.CodeLength) return Forbid();
-            
-            var error = await _verificationService.CheckVerificationAsync(input.number, input.code);
-            if (error != null) return Forbid();
+            var success = await _verificationService.CheckVerificationAsync(formattedNumber, input.code);
+            if (!success) return Forbid();
 
-
-            return Ok(
-                _cryptoService.JwtBuilder
-                    .ExpirationTime(DateTime.Now.AddMinutes(20))
-                    .AddClaim("type", "reg")
-                    .AddClaim("num", input.number)
-                    .AddClaim("ip", Convert.ToBase64String(_cryptoService.Sha256
-                        .ComputeHash(HttpContext.Connection.RemoteIpAddress.GetAddressBytes())))
-                    .Encode()
-            );
+            return Ok(new
+            {
+                authToken = _cryptoService.CreateAuthJwt(HttpContext.Connection.RemoteIpAddress, formattedNumber),
+                isRegistered = _userService.Any(u => u.Number == formattedNumber)
+            });
         }
 
         [Consumes("application/json")]
@@ -126,7 +95,7 @@ namespace MessengerBackend.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [HttpPost("register")]
-        [Authorize]
+        [Authorize(Policy = "AuthTokenOnly")]
         public IActionResult Register()
         {
             var input = MyJsonDeserializer.DeserializeAnonymousType(
@@ -134,21 +103,19 @@ namespace MessengerBackend.Controllers
                 {
                     firstName = "",
                     lastName = "",
-                    fingerprint = ""
+                    username = ""
                 });
-            if (HttpContext.User.FindFirst("type").Value != "reg")
-                return BadRequest("Invalid token");
-
+            
             var newUser = _userService.Add(HttpContext.User.FindFirst("num").Value, input.firstName,
                 input.lastName);
-
+            
             if (newUser == null) return Forbid();
-
+            var fingerprint = Request.Headers["X-Fingerprint"];
             var newSession =
                 _authService.AddSession(new Session
                 {
                     ExpiresIn = CryptoService.JwtOptions.RefreshTokenLifetimeDays,
-                    Fingerprint = input.fingerprint,
+                    Fingerprint = StringValues.IsNullOrEmpty(fingerprint) ? fingerprint.ToString() : null,
                     IPHash = SHA256.Create()
                         .ComputeHash(HttpContext.Connection.RemoteIpAddress.GetAddressBytes()),
                     UserAgent = Request.Headers["User-Agent"],
@@ -156,31 +123,28 @@ namespace MessengerBackend.Controllers
                     UpdatedAt = DateTime.UtcNow,
                     RefreshToken = CryptoService.GenerateRefreshToken()
                 });
-
             return Ok(new
             {
                 refreshToken = newSession.Entity.RefreshToken,
                 accessToken = _cryptoService.CreateAccessJwt(HttpContext.Connection.RemoteIpAddress,
-                    newSession.Entity.User.UserPID)
+                newSession.Entity.User.UserPID)
             });
         }
 
         [HttpPost("login")]
         [Produces("application/json")]
         [Consumes("application/json")]
+        [Authorize(Policy = "AuthTokenOnly")]
         public IActionResult Login()
         {
-            var input = MyJsonDeserializer.DeserializeAnonymousType(
-                Request.Body.GetString(), new
-                {
-                    fingerprint = ""
-                });
-            var user = _userService.FirstOrDefault(u => u.Number == HttpContext?.User?.FindFirst("num").Value);
-            if (user == null) return NotFound();
+            var user = _userService.FirstOrDefault(
+                u => u.Number == HttpContext?.User?.FindFirst("num").Value);
+            if (user == null) return Forbid();
+            var fingerprint = Request.Headers["X-Fingerprint"];
             var newSession = _authService.AddSession(new Session
             {
                 ExpiresIn = CryptoService.JwtOptions.RefreshTokenLifetimeDays,
-                Fingerprint = input.fingerprint,
+                Fingerprint = StringValues.IsNullOrEmpty(fingerprint) ? fingerprint.ToString() : null,
                 IPHash = SHA256.Create()
                     .ComputeHash(HttpContext!.Connection.RemoteIpAddress.GetAddressBytes()),
                 UserAgent = Request.Headers["User-Agent"],
@@ -202,15 +166,12 @@ namespace MessengerBackend.Controllers
         [HttpPost("refresh")]
         public IActionResult Refresh()
         {
-            var input = MyJsonDeserializer.DeserializeAnonymousType(Request.Body.GetString(), new
-            {
-                fingerprint = ""
-            });
             var token = Request.Headers[HeaderNames.Authorization];
-
+            var fingerprint = Request.Headers["X-Fingerprint"];
             var session = _authService.GetAndDeleteSession(token);
-            if (session == null) return BadRequest();
-            if (session.Fingerprint != input.fingerprint
+            if (session == null) return Forbid();
+            if (session.Fingerprint != null && session.Fingerprint !=
+                (StringValues.IsNullOrEmpty(fingerprint) ? fingerprint.ToString() : null)
                 // || session.IPHash != HttpContext.Connection.RemoteIpAddress.GetAddressBytes()
                 // || session.UserAgent != Request.Headers["User-Agent"]
             )
@@ -229,7 +190,7 @@ namespace MessengerBackend.Controllers
             {
                 ExpiresIn = (DateTime.Now.AddDays(CryptoService.JwtOptions.RefreshTokenLifetimeDays) - DateTime.Now)
                     .Seconds,
-                Fingerprint = input.fingerprint,
+                Fingerprint = StringValues.IsNullOrEmpty(fingerprint) ? fingerprint.ToString() : null,
                 IPHash = session.IPHash,
                 UserAgent = session.UserAgent,
                 UpdatedAt = DateTime.Now,
@@ -244,13 +205,7 @@ namespace MessengerBackend.Controllers
             });
         }
 
-        private static ObjectResult ForbidResponse(object response) => new ObjectResult(response) {StatusCode = 403};
-
-        private class NumberBan
-        {
-            public Timer ExpirationTimer;
-            public DateTime ExpiresAt;
-            public string Number;
-        }
+        private static ObjectResult ForbidResponse(object response) => new ObjectResult(response) { StatusCode = 403 };
+        private static ForbidResult ForbidResponse() => new ForbidResult();
     }
 }

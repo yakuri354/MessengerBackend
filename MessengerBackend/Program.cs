@@ -1,7 +1,3 @@
-using System;
-using System.Threading;
-using System.Threading.Tasks;
-using MessengerBackend.RealTime;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 using Serilog;
@@ -14,9 +10,9 @@ namespace MessengerBackend
         {
             var logBuilder = new LoggerConfiguration();
 
-            if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development")
-                logBuilder.MinimumLevel.Debug();
-            else logBuilder.MinimumLevel.Information();
+            // if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development")
+            //     logBuilder.MinimumLevel.Debug();
+            // else logBuilder.MinimumLevel.Information();
 
             Log.Logger = logBuilder
                 .WriteTo.Console()
@@ -24,20 +20,8 @@ namespace MessengerBackend
 
             Log.Information("Starting");
 
-            Task rtask = null;
-            if (Environment.GetEnvironmentVariable("NO_REALTIME") == null)
-            {
-                Log.Information("Starting RealTime server");
-                rtask = new RealTimeServer(new CancellationTokenSource()).Start();
-            }
+            CreateHostBuilder(args).Build().Run();
 
-            if (Environment.GetEnvironmentVariable("NO_ASPNET") == null)
-            {
-                Log.Information("Starting ASP.NET framework");
-                CreateHostBuilder(args).Build().Run();
-            }
-
-            rtask?.Wait();
             Log.Information("Exiting");
         }
 
@@ -45,7 +29,7 @@ namespace MessengerBackend
         {
             return Host.CreateDefaultBuilder(args)
                 .UseSerilog()
-                .ConfigureWebHostDefaults(webBuilder => { webBuilder.UseStartup<Startup>().UseKestrel(); });
+                .ConfigureWebHostDefaults(webBuilder => webBuilder.UseStartup<Startup>().UseKestrel());
         }
     }
 }

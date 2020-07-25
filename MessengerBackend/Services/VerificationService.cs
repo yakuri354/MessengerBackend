@@ -1,5 +1,4 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Serilog;
 using Twilio;
@@ -31,24 +30,29 @@ namespace MessengerBackend.Services
             TwilioService = ServiceResource.Fetch(_twilioConfig.ServiceSid);
         }
 
-        public async Task<string> StartVerificationAsync(string phoneNumber, string channel)
-        {
-            try
-            {
-                var verificationResource = await VerificationResource.CreateAsync(
-                    to: phoneNumber,
-                    channel: channel,
-                    pathServiceSid: _twilioConfig.ServiceSid
-                );
-                return null;
-            }
-            catch (Exception e) when (e is TwilioException || e is ApiException)
-            {
-                return e.Message;
-            }
-        }
+        public async Task StartVerificationAsync(string phoneNumber, string channel) =>
+            await VerificationResource.CreateAsync(
+                to: phoneNumber,
+                channel: channel,
+                pathServiceSid: _twilioConfig.ServiceSid
+            );
 
-        public async Task<string> CheckVerificationAsync(string phoneNumber, string code)
+
+        // {
+        // try
+        // {
+        // }
+        // catch (Exception e) when (e is TwilioException)
+        // {
+        //     if ((e as ApiException)?.Code == 429)
+        //     {
+        //         throw new TooManyRequestsException();
+        //     }
+        //     return e.Message;
+        // }
+        // }
+
+        public async Task<bool> CheckVerificationAsync(string phoneNumber, string code)
         {
             try
             {
@@ -57,12 +61,21 @@ namespace MessengerBackend.Services
                     code: code,
                     pathServiceSid: _twilioConfig.ServiceSid
                 );
-                return verificationCheckResource.Status == "approved" ? null : "wrong code";
+                return verificationCheckResource.Status == "approved";
             }
-            catch (Exception e) when (e is TwilioException || e is ApiException)
+            catch (ApiException e)
             {
-                return e.Message;
+                throw e;
             }
+
+            // {
+            //     if ((e as ApiException)?.Code == 429)
+            //     {
+            //         throw new TooManyRequestsException();
+            //     }
+            //
+            //     return e.Message;
+            // }
         }
     }
 

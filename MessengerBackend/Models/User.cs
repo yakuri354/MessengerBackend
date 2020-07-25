@@ -2,12 +2,15 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Linq;
 
 namespace MessengerBackend.Models
 {
     public class User
     {
         public IEnumerable<RoomParticipant> RoomsParticipants { get; set; }
+
+        [NotMapped] public IEnumerable<Room> Rooms => from participant in RoomsParticipants select participant.Room;
 
 
         public IEnumerable<Session> Sessions { get; set; }

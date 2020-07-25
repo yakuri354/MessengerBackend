@@ -81,6 +81,16 @@ namespace MessengerBackend.Services
                 .ExpirationTime(DateTime.UtcNow.AddMinutes(JwtOptions.AccessTokenLifetimeMinutes))
                 .Encode();
 
+        public string CreateAuthJwt(IPAddress ip, string number) =>
+            JwtBuilder
+                .ExpirationTime(DateTime.Now.AddMinutes(20))
+                .AddClaim("type", "auth")
+                .AddClaim("num", number)
+                .AddClaim("ip", Convert.ToBase64String(Sha256
+                    .ComputeHash(ip.GetAddressBytes())))
+                .ExpirationTime(DateTime.UtcNow.AddMinutes(JwtOptions.AuthTokenLifetimeMinutes))
+                .Encode();
+
         private static string GenerateToken(int length, string charset = CharSet)
         {
             var chars = charset.ToCharArray();
@@ -101,6 +111,7 @@ namespace MessengerBackend.Services
             public const string Audience = "user";
             public const int RefreshTokenLifetimeDays = 30;
             public const int AccessTokenLifetimeMinutes = 20;
+            public const int AuthTokenLifetimeMinutes = AccessTokenLifetimeMinutes;
             public const int AccessTokenJtiLength = 10;
             public const int RefreshTokenLength = 24;
         }

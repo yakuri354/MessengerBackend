@@ -3,15 +3,16 @@
 using System;
 using System.Linq;
 using System.Text;
-using System.Text.Json;
+using AspNetCoreRateLimit;
 using MessengerBackend.Database;
+using MessengerBackend.Errors;
 using MessengerBackend.Services;
 using MessengerBackend.Utils;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.EntityFrameworkCore;
@@ -21,7 +22,9 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Logging;
 using Microsoft.IdentityModel.Tokens;
+using Newtonsoft.Json;
 using Npgsql.Logging;
+using Twilio.Exceptions;
 using NewtonsoftJsonException = Newtonsoft.Json.JsonException;
 
 namespace MessengerBackend
@@ -37,9 +40,39 @@ namespace MessengerBackend
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddSignalR();
+            services.AddOptions();
+            services.AddMemoryCache();
+
+            // Configure rate limiting
+            {
+                //load general configuration from appsettings.json
+                services.Configure<IpRateLimitOptions>(Configuration.GetSection("IpRateLimiting"));
+
+                //load ip rules from appsettings.json
+                services.Configure<IpRateLimitPolicies>(Configuration.GetSection("IpRateLimitPolicies"));
+
+                // inject counter and rules stores
+                services.AddSingleton<IIpPolicyStore, MemoryCacheIpPolicyStore>();
+                services.AddSingleton<IRateLimitCounterStore, MemoryCacheRateLimitCounterStore>();
+
+                // Add framework services.
+                services.AddMvc();
+
+                // https://github.com/aspnet/Hosting/issues/793
+                // the IHttpContextAccessor service is not registered by default.
+                // the clientId/clientIp resolvers use it.
+                services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+
+                // configuration (resolvers, counter key builders)
+                services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
+            }
+
             _cryptoService = new CryptoService(Configuration);
             services.AddSingleton(_cryptoService);
+
             NpgsqlLogManager.Provider = new SerilogLoggingProvider();
+
             services.AddDbContext<MessengerDBContext>(builder => builder
                 .UseNpgsql(Configuration["Database:ConnectionString"]
                            ?? throw new ArgumentException("No connection string provided"),
@@ -64,6 +97,14 @@ namespace MessengerBackend
                 };
             });
 
+            services.AddAuthorization(options =>
+            {
+                options.DefaultPolicy = new AuthorizationPolicyBuilder()
+                    .RequireClaim("type", "access")
+                    .Build();
+                options.AddPolicy("AuthTokenOnly", pol =>
+                    pol.RequireClaim("type", "auth"));
+            });
 
             services.AddControllersWithViews();
 
@@ -74,13 +115,13 @@ namespace MessengerBackend
 
             services.AddSwaggerDocument();
 
-            services.Configure<ApiBehaviorOptions>(options =>
-            {
-                options.ClientErrorMapping[429] = new ClientErrorData
-                {
-                    Title = "Too Many Requests"
-                };
-            });
+            // services.Configure<ApiBehaviorOptions>(options =>
+            // {
+            //     options.ClientErrorMapping[429] = new ClientErrorData
+            //     {
+            //         Title = "Too Many Requests"
+            //     };
+            // });
 
             services.AddHttpContextAccessor();
             services.TryAddSingleton<IActionContextAccessor, ActionContextAccessor>();
@@ -96,12 +137,15 @@ namespace MessengerBackend
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
+                app.UseDatabaseErrorPage();
                 IdentityModelEventSource.ShowPII = true;
             }
             else
             {
                 app.UseHttpsRedirection();
             }
+
+            app.UseIpRateLimiting();
 
             app.Use(async (ctx, next) =>
             {
@@ -123,16 +167,35 @@ namespace MessengerBackend
                 {
                     await next();
                 }
-                catch (Exception e) when (e is JsonException || e is NewtonsoftJsonException)
+                catch (ApiErrorException ex)
                 {
-                    ctx.Response.StatusCode = 400;
+                    ctx.Response.StatusCode = ex.HttpStatusCode;
                     ctx.Response.ContentType = "application/json";
-                    await ctx.Response.WriteAsync(JsonSerializer.Serialize(new
-                        {error = "invalid json", message = e.Message}));
+                    foreach (var (key, value) in ex.HttpHeaders) ctx.Response.Headers[key] = value;
+
+                    await ctx.Response.WriteAsync(JsonConvert.SerializeObject(new
+                    {
+                        type = "api",
+                        errorCode = ex.Code,
+                        summary = ex.Summary,
+                        details = ex.Message
+                    }));
+                }
+                catch (ApiException ex)
+                {
+                    ctx.Response.StatusCode = ex.Status;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.WriteAsync(JsonConvert.SerializeObject(new
+                    {
+                        type = "twilio",
+                        twilioErrorCode = ex.Code,
+                        details = ex.Message,
+                        moreInfo = ex.MoreInfo
+                    }));
                 }
             });
-            // app.UseOpenApi();
-            // app.UseSwaggerUi3();
+            app.UseOpenApi();
+            app.UseSwaggerUi3();
 
             app.UseRouting();
 
@@ -151,8 +214,6 @@ namespace MessengerBackend
 
                 await next();
             });
-
-            // TODO Rate limiting
 
             app.UseEndpoints(endpoints => { endpoints.MapControllers(); });
         }

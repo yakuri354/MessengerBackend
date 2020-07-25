@@ -35,6 +35,7 @@ namespace MessengerBackend.Services
         }
 
         public User FirstOrDefault(Func<User, bool> input) => _dbContext.Users.FirstOrDefault(input);
+        public bool Any(Func<User, bool> input) => _dbContext.Users.Any(input);
 
         public bool SaveUser(User user)
         {
