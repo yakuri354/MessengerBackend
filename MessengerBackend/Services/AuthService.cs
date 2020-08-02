@@ -19,24 +19,22 @@ namespace MessengerBackend.Services
             _configuration = config;
         }
 
-        public Task<Session> GetSession(string token)
-        {
-            return _dbContext.Sessions.Where(s => s.RefreshToken == token).FirstOrDefaultAsync();
-        }
+        public Task<Session> GetSessionAsync(string token) =>
+            _dbContext.Sessions.Where(s => s.RefreshToken == token).FirstOrDefaultAsync();
 
-        public Session GetAndDeleteSession(string token)
+        public async Task<Session> GetAndDeleteSessionAsync(string token)
         {
-            var session = GetSession(token).Result;
+            var session = await GetSessionAsync(token);
             if (session == null) return null;
             _dbContext.Sessions.Remove(session);
-            _dbContext.SaveChangesAsync();
+            await _dbContext.SaveChangesAsync();
             return session;
         }
 
-        public EntityEntry<Session> AddSession(Session session)
+        public async Task<EntityEntry<Session>> AddSessionAsync(Session session)
         {
-            var s = _dbContext.Add(session);
-            _dbContext.SaveChanges();
+            var s = await _dbContext.Sessions.AddAsync(session);
+            await _dbContext.SaveChangesAsync();
             return s;
         }
     }

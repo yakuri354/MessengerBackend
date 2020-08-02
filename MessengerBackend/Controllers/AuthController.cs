@@ -7,6 +7,7 @@ using MessengerBackend.Utils;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Primitives;
 using Microsoft.Net.Http.Headers;
 using PhoneNumbers;
@@ -86,7 +87,7 @@ namespace MessengerBackend.Controllers
             return Ok(new
             {
                 authToken = _cryptoService.CreateAuthJwt(HttpContext.Connection.RemoteIpAddress, formattedNumber),
-                isRegistered = _userService.Any(u => u.Number == formattedNumber)
+                isRegistered = await _userService.Users.AnyAsync(u => u.Number == formattedNumber)
             });
         }
 
@@ -95,8 +96,8 @@ namespace MessengerBackend.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [HttpPost("register")]
-        [Authorize(Policy = "AuthTokenOnly")]
-        public IActionResult Register()
+        [Authorize(Policy = "AuthToken")]
+        public async Task<IActionResult> Register()
         {
             var input = MyJsonDeserializer.DeserializeAnonymousType(
                 Request.Body.GetString(), new
@@ -106,13 +107,12 @@ namespace MessengerBackend.Controllers
                     username = ""
                 });
             
-            var newUser = _userService.Add(HttpContext.User.FindFirst("num").Value, input.firstName,
+            var newUser = await _userService.AddUserAsync(HttpContext.User.FindFirst("num").Value, input.firstName,
                 input.lastName);
             
             if (newUser == null) return Forbid();
             var fingerprint = Request.Headers["X-Fingerprint"];
-            var newSession =
-                _authService.AddSession(new Session
+            var newSession = await _authService.AddSessionAsync(new Session
                 {
                     ExpiresIn = CryptoService.JwtOptions.RefreshTokenLifetimeDays,
                     Fingerprint = StringValues.IsNullOrEmpty(fingerprint) ? fingerprint.ToString() : null,
@@ -134,14 +134,14 @@ namespace MessengerBackend.Controllers
         [HttpPost("login")]
         [Produces("application/json")]
         [Consumes("application/json")]
-        [Authorize(Policy = "AuthTokenOnly")]
-        public IActionResult Login()
+        [Authorize(Policy = "AuthToken")]
+        public async Task<IActionResult> Login()
         {
-            var user = _userService.FirstOrDefault(
-                u => u.Number == HttpContext?.User?.FindFirst("num").Value);
+            var user = await _userService.Users.FirstOrDefaultAsync(
+                u => u.Number == HttpContext.User.FindFirst("num").Value);
             if (user == null) return Forbid();
             var fingerprint = Request.Headers["X-Fingerprint"];
-            var newSession = _authService.AddSession(new Session
+            var newSession = await _authService.AddSessionAsync(new Session
             {
                 ExpiresIn = CryptoService.JwtOptions.RefreshTokenLifetimeDays,
                 Fingerprint = StringValues.IsNullOrEmpty(fingerprint) ? fingerprint.ToString() : null,
@@ -164,11 +164,12 @@ namespace MessengerBackend.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [HttpPost("refresh")]
-        public IActionResult Refresh()
+        [Authorize(Policy = "RefreshTokenOnly")]
+        public async Task<IActionResult> Refresh()
         {
             var token = Request.Headers[HeaderNames.Authorization];
             var fingerprint = Request.Headers["X-Fingerprint"];
-            var session = _authService.GetAndDeleteSession(token);
+            var session = await _authService.GetAndDeleteSessionAsync(token);
             if (session == null) return Forbid();
             if (session.Fingerprint != null && session.Fingerprint !=
                 (StringValues.IsNullOrEmpty(fingerprint) ? fingerprint.ToString() : null)
@@ -186,7 +187,7 @@ namespace MessengerBackend.Controllers
                     {
                         error = "Token Expired"
                     });
-            var newSession = _authService.AddSession(new Session
+            var newSession = await _authService.AddSessionAsync(new Session
             {
                 ExpiresIn = (DateTime.Now.AddDays(CryptoService.JwtOptions.RefreshTokenLifetimeDays) - DateTime.Now)
                     .Seconds,

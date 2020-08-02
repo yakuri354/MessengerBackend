@@ -27,7 +27,7 @@ namespace MessengerBackend.Errors
 
         public InvalidNumberException(string details) => Details = details;
 
-        public override int Code => 5335;
+        public override int Code => 1100;
         public override int HttpStatusCode => 400;
         public override string Summary => "Invalid Number";
 
@@ -47,7 +47,7 @@ namespace MessengerBackend.Errors
         public JsonParseException(JsonException ex) => Message = ex.Message;
         public JsonParseException(Newtonsoft.Json.JsonException ex) => Message = ex.Message;
         public JsonParseException(string message) => Message = message;
-        public override int Code => 101;
+        public override int Code => 1000;
         public override int HttpStatusCode => 400;
         public override string Summary => "Json parse error";
 
@@ -56,7 +56,7 @@ namespace MessengerBackend.Errors
 
     public class TooManyRequestsException : ApiErrorException
     {
-        public override int Code => 429;
+        public override int Code => 1200;
         public override int HttpStatusCode => 429;
         public override string Summary => "Too Many Requests";
     }
@@ -73,7 +73,7 @@ namespace MessengerBackend.Errors
             _actualType = actualType;
         }
 
-        public override int Code => 2342;
+        public override int Code => 3101;
         public override int HttpStatusCode => 403;
         public override string Summary => "Wrong token type";
 
@@ -90,5 +90,20 @@ namespace MessengerBackend.Errors
                 return "";
             }
         }
+    }
+
+    public class TokenVerificationFailedException : ApiErrorException
+    {
+        public TokenVerificationFailedException(string message) => Message = message;
+
+        public TokenVerificationFailedException()
+        {
+        }
+
+        public override int Code => 3102;
+        public override int HttpStatusCode => 403;
+        public override string Summary => "Token verification failed";
+
+        public override string Message { get; }
     }
 }

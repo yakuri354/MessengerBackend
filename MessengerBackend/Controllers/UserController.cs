@@ -1,13 +1,16 @@
-﻿using MessengerBackend.Errors;
+﻿using System.Threading.Tasks;
+using MessengerBackend.Errors;
 using MessengerBackend.Services;
 using MessengerBackend.Utils;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Route = Microsoft.AspNetCore.Mvc.RouteAttribute;
 
 namespace MessengerBackend.Controllers
 {
     [ApiController]
+    [Authorize]
     [Microsoft.AspNetCore.Mvc.Route("/api/users")]
     public class UserController : Controller
     {
@@ -15,24 +18,11 @@ namespace MessengerBackend.Controllers
 
         public UserController(UserService userService) => _userService = userService;
 
-        public IActionResult SearchForUser() => Ok();
-    }
-
-    [ApiController]
-    [Microsoft.AspNetCore.Mvc.Route("/api/users/me")]
-    [Produces("application/json")]
-    public class MeController : Controller
-    {
-        private readonly UserService _userService;
-
-        public MeController(UserService userService) => _userService = userService;
-
-        [Authorize]
-        [HttpGet("profile")]
+        [HttpGet("me")]
         [Produces("application/json")]
-        public IActionResult Me()
+        public async Task<IActionResult> Me()
         {
-            var user = _userService.FirstOrDefault(
+            var user = await _userService.Users.FirstOrDefaultAsync(
                 u => u.UserPID == HttpContext.User.FindFirst("uid").Value);
             if (user == null) return NotFound();
             return Ok(new
@@ -45,12 +35,11 @@ namespace MessengerBackend.Controllers
                 avatarUrl = user.AvatarUrl ?? ""
             });
         }
-
-        [Authorize]
-        [HttpPost("profile")]
+        
+        [HttpPost("me")]
         [Consumes("application/json")]
         [Produces("application/json")]
-        public IActionResult EditProfile()
+        public async Task<IActionResult> EditMe()
         {
             var input = MyJsonDeserializer.DeserializeAnonymousType(Request.Body.GetString(), new
             {
@@ -62,7 +51,7 @@ namespace MessengerBackend.Controllers
             if (input == null || input.firstName == null && input.lastName == null && input.userName == null &&
                 input.bio == null)
                 throw new JsonParseException("No changes provided");
-            var user = _userService.FirstOrDefault(
+            var user = await _userService.Users.FirstOrDefaultAsync(
                 u => u.UserPID == HttpContext.User.FindFirst("uid").Value);
             if (user == null) return NotFound();
             if (input.firstName != null) user.FirstName = input.firstName;
@@ -72,7 +61,7 @@ namespace MessengerBackend.Controllers
             if (input.userName != null) user.Username = input.lastName;
 
             if (input.bio != null) user.Bio = input.bio;
-            if (_userService.SaveUser(user))
+            if (await _userService.SaveUserAsync(user))
                 return Ok();
             return Forbid();
         }

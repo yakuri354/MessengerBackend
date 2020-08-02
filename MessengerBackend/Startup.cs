@@ -2,10 +2,14 @@
 
 using System;
 using System.Linq;
+using System.Net.WebSockets;
+using System.Runtime.InteropServices.ComTypes;
 using System.Text;
 using AspNetCoreRateLimit;
 using MessengerBackend.Database;
 using MessengerBackend.Errors;
+using MessengerBackend.Policies;
+using MessengerBackend.RealTime;
 using MessengerBackend.Services;
 using MessengerBackend.Utils;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -40,7 +44,6 @@ namespace MessengerBackend
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddSignalR();
             services.AddOptions();
             services.AddMemoryCache();
 
@@ -100,16 +103,24 @@ namespace MessengerBackend
             services.AddAuthorization(options =>
             {
                 options.DefaultPolicy = new AuthorizationPolicyBuilder()
+                    .AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme)
+                    .RequireAuthenticatedUser()
                     .RequireClaim("type", "access")
+                    .AddRequirements(new IPCheckRequirement())
                     .Build();
-                options.AddPolicy("AuthTokenOnly", pol =>
-                    pol.RequireClaim("type", "auth"));
+                options.AddPolicy("AuthToken", pol =>
+                    pol.AddRequirements(new IPCheckRequirement())
+                        .AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme)
+                        .RequireAuthenticatedUser()
+                        .RequireClaim("type", "auth"));
             });
+
 
             services.AddControllersWithViews();
 
             services.AddSingleton<VerificationService>();
-
+            services.AddSingleton<RealTimeServer>();
+            
             services.AddScoped<UserService>();
             services.AddScoped<AuthService>();
 
@@ -194,6 +205,14 @@ namespace MessengerBackend
                     }));
                 }
             });
+
+            app.UseWebSockets(new WebSocketOptions()
+            {
+                KeepAliveInterval = TimeSpan.FromMinutes(2.0)
+            });
+
+            app.UseMiddleware<WebSocketMiddleware>();
+
             app.UseOpenApi();
             app.UseSwaggerUi3();
 
@@ -202,18 +221,18 @@ namespace MessengerBackend
             app.UseAuthentication();
             app.UseAuthorization();
 
-            app.Use(async (ctx, next) =>
-            {
-                if (!ctx?.GetEndpoint()?.RequestDelegate?.Method
-                    .GetCustomAttributes(typeof(AnyIP), false).Any() ?? false)
-                {
-                    var ipHash = ctx.User?.FindFirst("ip")?.Value;
-                    if (ipHash != null && !_cryptoService.IPValid(ctx.Connection.RemoteIpAddress, ipHash))
-                        ctx.Response.StatusCode = 400;
-                }
-
-                await next();
-            });
+            // app.Use(async (ctx, next) =>
+            // {
+            //     if (!ctx?.GetEndpoint()?.RequestDelegate?.Method
+            //         .GetCustomAttributes(typeof(AnyIP), false).Any() ?? false)
+            //     {
+            //         var ipHash = ctx.User?.FindFirst("ip")?.Value;
+            //         if (ipHash != null && !_cryptoService.IPValid(ctx.Connection.RemoteIpAddress, ipHash))
+            //             ctx.Response.StatusCode = 400;
+            //     }
+            //
+            //     await next();
+            // });
 
             app.UseEndpoints(endpoints => { endpoints.MapControllers(); });
         }

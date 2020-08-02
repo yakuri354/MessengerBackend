@@ -14,27 +14,6 @@ namespace MessengerBackend.Controllers
         [HttpGet]
         public IActionResult Index() => View();
 
-        // [HttpGet("getConnPrefs")]
-        // [Produces("application/json")]
-        // [ProducesResponseType(StatusCodes.Status200OK)]
-        // [return: Description("Realtime server IP and port")]
-        // public IActionResult GetConnectionPrefs()
-        // {
-        //     var host = Dns.GetHostEntry(Dns.GetHostName());
-        //     return Ok(new
-        //     {
-        //         realTimeServerIPv4 =
-        //             host.AddressList.FirstOrDefault(ip =>
-        //                 ip.AddressFamily == AddressFamily.InterNetwork)?.ToString() ?? "unknown",
-        //
-        //         realTimeServerIPv6 =
-        //             host.AddressList.FirstOrDefault(ip =>
-        //                 ip.AddressFamily == AddressFamily.InterNetworkV6)?.ToString() ?? "unknown",
-        //         realTimePortIPv4 = RealTimeServer.PortV4,
-        //         realTimePortIPv6 = RealTimeServer.PortV6
-        //     });
-        // }
-
 // #if USERSA
 //         [Produces("application/octet-stream")]
 //         [return: Description("Gets RSA JWT Public Key in the PKCS#1 format")]
@@ -46,18 +25,5 @@ namespace MessengerBackend.Controllers
 //         }
 // #endif
     }
-
-    [Route("/error")]
-    [ApiController]
-    public class ErrorController : Controller
-    {
-        [Route("404")]
-        public IActionResult PageNotFound() =>
-            // var originalPath = "unknown";
-            // if (HttpContext.Items.ContainsKey("originalPath"))
-            // {
-            //     originalPath = HttpContext.Items["originalPath"] as string;
-            // }
-            View();
-    }
+    
 }
