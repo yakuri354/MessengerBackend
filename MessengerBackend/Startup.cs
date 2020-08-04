@@ -1,9 +1,6 @@
 #define USEHMAC
 
 using System;
-using System.Linq;
-using System.Net.WebSockets;
-using System.Runtime.InteropServices.ComTypes;
 using System.Text;
 using AspNetCoreRateLimit;
 using MessengerBackend.Database;
@@ -35,11 +32,15 @@ namespace MessengerBackend
 {
     public class Startup
     {
-        private CryptoService _cryptoService;
+        private readonly CryptoService _cryptoService;
 
-        public Startup(IConfiguration configuration) => Configuration = configuration;
+        public Startup(IConfiguration configuration)
+        {
+            Configuration = configuration;
+            _cryptoService = new CryptoService(configuration);
+        }
 
-        public IConfiguration Configuration { get; }
+        private IConfiguration Configuration { get; }
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
@@ -70,8 +71,6 @@ namespace MessengerBackend
                 // configuration (resolvers, counter key builders)
                 services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
             }
-
-            _cryptoService = new CryptoService(Configuration);
             services.AddSingleton(_cryptoService);
 
             NpgsqlLogManager.Provider = new SerilogLoggingProvider();
@@ -120,19 +119,13 @@ namespace MessengerBackend
 
             services.AddSingleton<VerificationService>();
             services.AddSingleton<RealTimeServer>();
-            
+
             services.AddScoped<UserService>();
             services.AddScoped<AuthService>();
+            services.AddScoped<ChatService>();
 
             services.AddSwaggerDocument();
-
-            // services.Configure<ApiBehaviorOptions>(options =>
-            // {
-            //     options.ClientErrorMapping[429] = new ClientErrorData
-            //     {
-            //         Title = "Too Many Requests"
-            //     };
-            // });
+            
 
             services.AddHttpContextAccessor();
             services.TryAddSingleton<IActionContextAccessor, ActionContextAccessor>();
@@ -206,7 +199,7 @@ namespace MessengerBackend
                 }
             });
 
-            app.UseWebSockets(new WebSocketOptions()
+            app.UseWebSockets(new WebSocketOptions
             {
                 KeepAliveInterval = TimeSpan.FromMinutes(2.0)
             });

@@ -8,7 +8,7 @@ namespace MessengerBackend.Errors
     //TODO Organize codes
     public abstract class ApiErrorException : Exception
     {
-        protected string Details;
+        protected string? Details;
         public abstract int Code { get; }
         public abstract string Summary { get; }
         public abstract int HttpStatusCode { get; }
@@ -104,6 +104,6 @@ namespace MessengerBackend.Errors
         public override int HttpStatusCode => 403;
         public override string Summary => "Token verification failed";
 
-        public override string Message { get; }
+        public override string? Message { get; }
     }
 }

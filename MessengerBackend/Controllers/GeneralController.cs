@@ -25,5 +25,4 @@ namespace MessengerBackend.Controllers
 //         }
 // #endif
     }
-    
 }

@@ -101,6 +101,13 @@ namespace MessengerBackend.Services
             return result.ToString();
         }
 
+        public static uint RandomUint()
+        {
+            var buf = new byte[4];
+            _rng.GetNonZeroBytes(buf);
+            return BitConverter.ToUInt32(buf);
+        }
+
         private const string CharSet = "abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
         private const string CrockfordCharSet = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
         public static int CharSetLength = CharSet.Length;

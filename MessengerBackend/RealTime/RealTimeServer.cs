@@ -4,33 +4,32 @@ using System.Net.WebSockets;
 using System.Threading;
 using System.Threading.Tasks;
 using MessengerBackend.Services;
-using MessengerBackend.Utils;
 
 namespace MessengerBackend.RealTime
 {
-    public class RealTimeServer : IDisposable
+    public sealed class RealTimeServer : IDisposable
     {
-        private readonly UserService _userService;
-        private ConcurrentBag<OpenConnection> _connections;
+        private readonly ConcurrentDictionary<ulong, Connection> _connections =
+            new ConcurrentDictionary<ulong, Connection>();
+
+        private readonly Random _random = new Random();
+
         private readonly CancellationTokenSource _shutdown = new CancellationTokenSource();
-
-        public RealTimeServer(UserService userService) => _userService = userService;
-
-        public async void ProcessNewConnectionAsync(WebSocket sock, TaskCompletionSource<object> tcs)
-        {
-            var buf = new byte[1024 * 4];
-            var result = await sock.ReceiveAsync(new ArraySegment<byte>(buf), _shutdown.Token);
-            if (result.MessageType != WebSocketMessageType.Text)
-            {
-                await sock.CloseAsync(WebSocketCloseStatus.InvalidMessageType,
-                    "First request must be auth data in form of JSON", _shutdown.Token);
-            }
-            // TODO
-        }
 
         public void Dispose()
         {
             _shutdown.Cancel();
+            foreach (var connection in _connections) connection.Value.Dispose();
+        }
+
+        public async Task Connect(WebSocket sock, UserService userService, ChatService chatService)
+        {
+            using var conn = new Connection(sock);
+            conn.SetupDependencies(userService, chatService);
+            var connID = (ulong) (_random.NextDouble() * ulong.MaxValue);
+            _connections[connID] = conn;
+            conn.ConnectionClosed += (sender, args) => { _connections.TryRemove(connID, out _); };
+            await conn.StartPolling();
         }
     }
 }

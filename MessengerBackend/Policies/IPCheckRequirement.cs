@@ -1,5 +1,4 @@
 using System;
-using System.Security.Claims;
 using System.Threading.Tasks;
 using MessengerBackend.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -14,6 +13,8 @@ namespace MessengerBackend.Policies
 
     public class IPCheckHandler : AuthorizationHandler<IPCheckRequirement>
     {
+        private readonly CryptoService _cryptoService;
+
         public IPCheckHandler(IHttpContextAccessor httpContextAccessor, CryptoService cryptoService)
         {
             HttpContextAccessor = httpContextAccessor ?? throw new ArgumentNullException(nameof(httpContextAccessor));
@@ -21,7 +22,6 @@ namespace MessengerBackend.Policies
         }
 
         private IHttpContextAccessor HttpContextAccessor { get; }
-        private CryptoService _cryptoService;
         private HttpContext HttpContext => HttpContextAccessor.HttpContext;
 
 
@@ -32,22 +32,16 @@ namespace MessengerBackend.Policies
 
             // No claim existing set and and its configured as optional so skip the check
             if (ipClaim == null && !requirement.IpClaimRequired)
-            {
                 // Optional claims (IsClaimRequired=false and no "ip" in the claims principal) won't call context.Fail()
                 // This allows next Handle to succeed. If we call Fail() the access will be denied, even if handlers
                 // evaluated after this one do succeed
                 return Task.CompletedTask;
-            }
 
             if (_cryptoService.IPValid(HttpContext.Connection.RemoteIpAddress, ipClaim?.Value))
-            {
                 context.Succeed(requirement);
-            }
             else
-            {
                 // Only call fail, to guarantee a failure, even if further handlers may succeed
                 context.Fail();
-            }
 
             return Task.CompletedTask;
         }

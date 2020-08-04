@@ -35,7 +35,7 @@ namespace MessengerBackend.Controllers
                 avatarUrl = user.AvatarUrl ?? ""
             });
         }
-        
+
         [HttpPost("me")]
         [Consumes("application/json")]
         [Produces("application/json")]

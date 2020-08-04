@@ -1,6 +1,4 @@
-﻿using System;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using MessengerBackend.Database;
 using MessengerBackend.Models;
 using Microsoft.EntityFrameworkCore;
@@ -11,9 +9,9 @@ namespace MessengerBackend.Services
     public class UserService
     {
         private readonly MessengerDBContext _dbContext;
-        public DbSet<User> Users => _dbContext.Users;
 
         public UserService(MessengerDBContext dbContext) => _dbContext = dbContext;
+        public DbSet<User> Users => _dbContext.Users;
 
         public async Task<User> AddUserAsync(string number, string firstName, string lastName)
         {
@@ -52,6 +50,7 @@ namespace MessengerBackend.Services
                 return false;
             }
         }
+
         public bool SaveUser(User user)
         {
             try

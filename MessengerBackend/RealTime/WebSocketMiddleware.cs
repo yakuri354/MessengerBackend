@@ -1,5 +1,6 @@
 using System.Net.WebSockets;
 using System.Threading.Tasks;
+using MessengerBackend.Services;
 using Microsoft.AspNetCore.Http;
 
 namespace MessengerBackend.RealTime
@@ -15,15 +16,22 @@ namespace MessengerBackend.RealTime
             _srv = srv;
         }
 
-        public async Task InvokeAsync(HttpContext ctx)
+        public async Task InvokeAsync(HttpContext ctx, UserService userService, ChatService chatService)
         {
             if (ctx.Request.Path.StartsWithSegments("/ws"))
             {
                 if (ctx.WebSockets.IsWebSocketRequest)
                 {
-                    var tcs = new TaskCompletionSource<object>();
-                    _srv.ProcessNewConnectionAsync(await ctx.WebSockets.AcceptWebSocketAsync(), tcs);
-                    await tcs.Task;
+                    try
+                    {
+                        await _srv.Connect(await ctx.WebSockets.AcceptWebSocketAsync(), userService, chatService);
+                        await _next(ctx);
+                    }
+                    catch (WebSocketException e) when (e.WebSocketErrorCode ==
+                                                       WebSocketError.ConnectionClosedPrematurely)
+                    {
+                        await _next(ctx);
+                    }
                 }
                 else
                 {

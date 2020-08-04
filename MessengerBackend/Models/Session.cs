@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace MessengerBackend.Models
 {
+#nullable disable
     public class Session
     {
         [Required] public DateTime CreatedAt { get; set; }
@@ -24,4 +25,5 @@ namespace MessengerBackend.Models
 
         public string UserAgent { get; set; }
     }
+#nullable enable
 }
