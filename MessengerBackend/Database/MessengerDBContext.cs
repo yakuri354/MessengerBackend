@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.ValueGeneration;
 using Npgsql;
+// ReSharper disable UnusedAutoPropertyAccessor.Global
 
 namespace MessengerBackend.Database
 {
@@ -14,13 +15,14 @@ namespace MessengerBackend.Database
         public MessengerDBContext(DbContextOptions<MessengerDBContext> options) : base(options)
         {
         }
-
+        #nullable disable
         // public DbSet<Bot> Bots { get; set; }
         public DbSet<Message> Messages { get; set; }
         public DbSet<Room> Rooms { get; set; }
         public DbSet<Session> Sessions { get; set; }
         public DbSet<User> Users { get; set; }
         public DbSet<RoomParticipant> RoomParticipants { get; set; }
+        #nullable restore
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -77,6 +79,10 @@ namespace MessengerBackend.Database
                 rpb.HasOne(rp => rp.User)
                     .WithMany(u => u.RoomsParticipants)
                     .HasForeignKey(rp => rp.UserID);
+            });
+            modelBuilder.Entity<Event>(eb =>
+            {
+                
             });
             modelBuilder.UseHiLo();
         }

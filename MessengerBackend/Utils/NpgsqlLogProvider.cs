@@ -20,7 +20,7 @@ namespace MessengerBackend.Utils
             _logger = Serilog.Log.ForContext("NpgsqlName", name);
         }
 
-        public override void Log(NpgsqlLogLevel level, int connectorId, string msg, Exception exception = null)
+        public override void Log(NpgsqlLogLevel level, int connectorId, string msg, Exception? exception = null)
         {
             _logger.Write(ToSerilogLevel(level), exception, "");
         }

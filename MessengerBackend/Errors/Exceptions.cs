@@ -92,6 +92,7 @@ namespace MessengerBackend.Errors
         }
     }
 
+    #nullable disable
     public class TokenVerificationFailedException : ApiErrorException
     {
         public TokenVerificationFailedException(string message) => Message = message;
@@ -104,6 +105,7 @@ namespace MessengerBackend.Errors
         public override int HttpStatusCode => 403;
         public override string Summary => "Token verification failed";
 
-        public override string? Message { get; }
+        public override string Message { get; }
     }
+    #nullable restore
 }

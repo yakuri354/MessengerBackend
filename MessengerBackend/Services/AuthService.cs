@@ -10,19 +10,14 @@ namespace MessengerBackend.Services
 {
     public class AuthService
     {
-        private readonly IConfiguration _configuration;
         private readonly MessengerDBContext _dbContext;
 
-        public AuthService(MessengerDBContext dbContext, IConfiguration config)
-        {
-            _dbContext = dbContext;
-            _configuration = config;
-        }
+        public AuthService(MessengerDBContext dbContext, IConfiguration config) => _dbContext = dbContext;
 
         public Task<Session> GetSessionAsync(string token) =>
             _dbContext.Sessions.Where(s => s.RefreshToken == token).FirstOrDefaultAsync();
 
-        public async Task<Session> GetAndDeleteSessionAsync(string token)
+        public async Task<Session?> GetAndDeleteSessionAsync(string token)
         {
             var session = await GetSessionAsync(token);
             if (session == null) return null;

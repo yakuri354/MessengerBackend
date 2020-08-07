@@ -1,3 +1,6 @@
+#nullable disable
+// ReSharper disable UnusedAutoPropertyAccessor.Global
+
 using System;
 
 namespace MessengerBackend.Models

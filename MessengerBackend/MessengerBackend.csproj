@@ -20,12 +20,14 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="3.1.5" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="3.1.5" />
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="3.1.3" />
+    <PackageReference Include="NetMQ" Version="4.0.1.4" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="3.1.4" />
     <PackageReference Include="NSwag.AspNetCore" Version="13.6.1" />
     <PackageReference Include="PemUtils" Version="3.0.0.82" />
     <PackageReference Include="protobuf-net" Version="3.0.0" />
     <PackageReference Include="Serilog" Version="2.10.0-dev-01191" />
     <PackageReference Include="Serilog.AspNetCore" Version="3.4.0-dev-00171" />
+    <PackageReference Include="Serilog.Enrichers.Demystify" Version="1.0.0-dev-00019" />
     <PackageReference Include="Serilog.Extensions.Logging" Version="3.0.2-dev-10280" />
     <PackageReference Include="Serilog.Settings.Configuration" Version="3.2.0-dev-00244" />
     <PackageReference Include="Serilog.Sinks.Console" Version="4.0.0-dev-00839" />
@@ -51,5 +53,19 @@
       <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </Content>
+    <Content Remove="Views\**" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Remove="Views\**" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Remove="Views\**" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="Views\**" />
+  </ItemGroup>
+  <ItemGroup>
+    <_ContentIncludedByDefault Remove="Views\Error\PageNotFound.cshtml" />
+    <_ContentIncludedByDefault Remove="Views\General\Index.cshtml" />
   </ItemGroup>
 </Project>

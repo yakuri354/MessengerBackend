@@ -37,7 +37,7 @@ namespace MessengerBackend.Policies
                 // evaluated after this one do succeed
                 return Task.CompletedTask;
 
-            if (_cryptoService.IPValid(HttpContext.Connection.RemoteIpAddress, ipClaim?.Value))
+            if (_cryptoService.IPValid(HttpContext.Connection.RemoteIpAddress, ipClaim?.Value ?? ""))
                 context.Succeed(requirement);
             else
                 // Only call fail, to guarantee a failure, even if further handlers may succeed

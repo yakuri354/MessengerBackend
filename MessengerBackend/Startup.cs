@@ -1,7 +1,6 @@
 #define USEHMAC
 
 using System;
-using System.Text;
 using AspNetCoreRateLimit;
 using MessengerBackend.Database;
 using MessengerBackend.Errors;
@@ -22,7 +21,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Logging;
-using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using Npgsql.Logging;
 using Twilio.Exceptions;
@@ -82,21 +80,7 @@ namespace MessengerBackend
 
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(cfg =>
             {
-                cfg.TokenValidationParameters = new TokenValidationParameters
-                {
-                    ValidateLifetime = true,
-                    ValidateIssuerSigningKey = true,
-                    ValidateIssuer = true,
-                    ValidIssuer = CryptoService.JwtOptions.Issuer,
-                    ValidateAudience = true,
-                    ClockSkew = TimeSpan.FromMinutes(1),
-                    ValidAudience = CryptoService.JwtOptions.Audience,
-#if USERSA
-                    IssuerSigningKey = new RsaSecurityKey(cryptoService.PublicKey)
-#elif USEHMAC
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_cryptoService.HMACKey))
-#endif
-                };
+                cfg.TokenValidationParameters = _cryptoService.TokenValidationParameters;
             });
 
             services.AddAuthorization(options =>
@@ -122,10 +106,10 @@ namespace MessengerBackend
 
             services.AddScoped<UserService>();
             services.AddScoped<AuthService>();
-            services.AddScoped<ChatService>();
+            services.AddScoped<MessageProcessService>();
 
             services.AddSwaggerDocument();
-            
+
 
             services.AddHttpContextAccessor();
             services.TryAddSingleton<IActionContextAccessor, ActionContextAccessor>();

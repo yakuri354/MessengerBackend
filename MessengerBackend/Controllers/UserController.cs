@@ -58,7 +58,7 @@ namespace MessengerBackend.Controllers
 
             if (input.lastName != null) user.LastName = input.lastName;
 
-            if (input.userName != null) user.Username = input.lastName;
+            if (input.userName != null) user.Username = input.userName;
 
             if (input.bio != null) user.Bio = input.bio;
             if (await _userService.SaveUserAsync(user))

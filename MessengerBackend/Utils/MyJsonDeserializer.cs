@@ -7,6 +7,7 @@ namespace MessengerBackend.Utils
 {
     public static class MyJsonDeserializer
     {
+        // ReSharper disable once UnusedParameter.Global
         public static T DeserializeAnonymousType<T>(string json, T target, bool nullable = false)
         {
             try

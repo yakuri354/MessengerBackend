@@ -1,6 +1,7 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+// ReSharper disable UnusedAutoPropertyAccessor.Global
 
 namespace MessengerBackend.Models
 {

@@ -37,8 +37,6 @@ namespace MessengerBackend.Controllers
             _cryptoService = cryptoService;
         }
 
-        private PhoneNumberUtil _phoneNumberUtil => _phoneHelper.phoneNumberUtil;
-
         /**
          * <summary>Sends a code to specified number via specified channel</summary>
          * <param name="number">Number</param>
@@ -197,8 +195,5 @@ namespace MessengerBackend.Controllers
                     newSession.Entity.User.UserPID)
             });
         }
-
-        private static ObjectResult ForbidResponse(object response) => new ObjectResult(response) { StatusCode = 403 };
-        private static ForbidResult ForbidResponse() => new ForbidResult();
     }
 }

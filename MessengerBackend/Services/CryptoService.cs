@@ -1,19 +1,23 @@
 #define USEHMAC
 
 using System;
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Net;
+using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using JWT.Algorithms;
 using JWT.Builder;
 using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
 
 namespace MessengerBackend.Services
 {
     public class CryptoService
     {
-        private static readonly RNGCryptoServiceProvider _rng = new RNGCryptoServiceProvider();
+        private static readonly RNGCryptoServiceProvider Rng = new RNGCryptoServiceProvider();
+        // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
         private readonly IConfiguration _configuration;
 #if USERSA
         public JwtBuilder JwtBuilder => new JwtBuilder()
@@ -33,6 +37,8 @@ namespace MessengerBackend.Services
 
         public readonly string HMACKey;
 #endif
+        private readonly JwtSecurityTokenHandler _jwtSecurityTokenHandler = new JwtSecurityTokenHandler();
+
         public readonly SHA256 Sha256;
 
         public bool IPValid(IPAddress realIP, string base64EncodedIP) =>
@@ -60,6 +66,21 @@ namespace MessengerBackend.Services
 #elif USEHMAC
             HMACKey = _configuration["JWT:HMACKey"];
 #endif
+            TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
+                ValidateIssuer = true,
+                ValidIssuer = JwtOptions.Issuer,
+                ValidateAudience = true,
+                ClockSkew = TimeSpan.FromMinutes(1),
+                ValidAudience = JwtOptions.Audience,
+#if USERSA
+                    IssuerSigningKey = new RsaSecurityKey(cryptoService.PublicKey)
+#elif USEHMAC
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(HMACKey))
+#endif
+            };
         }
 
         public static string GenerateRefreshToken() => GenerateToken(JwtOptions.RefreshTokenLength);
@@ -95,7 +116,7 @@ namespace MessengerBackend.Services
         {
             var chars = charset.ToCharArray();
             var data = new byte[length];
-            _rng.GetNonZeroBytes(data);
+            Rng.GetNonZeroBytes(data);
             var result = new StringBuilder(length);
             foreach (var b in data) result.Append(chars[b % chars.Length]);
             return result.ToString();
@@ -104,7 +125,7 @@ namespace MessengerBackend.Services
         public static uint RandomUint()
         {
             var buf = new byte[4];
-            _rng.GetNonZeroBytes(buf);
+            Rng.GetNonZeroBytes(buf);
             return BitConverter.ToUInt32(buf);
         }
 
@@ -121,6 +142,14 @@ namespace MessengerBackend.Services
             public const int AuthTokenLifetimeMinutes = AccessTokenLifetimeMinutes;
             public const int AccessTokenJtiLength = 10;
             public const int RefreshTokenLength = 24;
+        }
+
+        public TokenValidationParameters TokenValidationParameters;
+
+        public (SecurityToken, ClaimsPrincipal) ValidateAccessJWT(string jwt)
+        {
+            var principal = _jwtSecurityTokenHandler.ValidateToken(jwt, TokenValidationParameters, out var token);
+            return (token, principal);
         }
 
         private const int PIDLength = 10;
