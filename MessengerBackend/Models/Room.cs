@@ -17,6 +17,7 @@ namespace MessengerBackend.Models
         public IEnumerable<RoomParticipant> Participants { get; set; }
         [NotMapped] public IEnumerable<User> Users => from p in Participants select p.User;
         public DateTime CreatedAt { get; set; }
+        public string Link { get; set; }
         public string Name { get; set; }
         public string RoomAvatar { get; set; }
     }
@@ -34,5 +35,12 @@ namespace MessengerBackend.Models
         public User User { get; set; }
         public int RoomID { get; set; }
         public Room Room { get; set; }
+        public ParticipantRole Role { get; set; }
+    }
+
+    public enum ParticipantRole
+    {
+        Creator,
+        Participant
     }
 }

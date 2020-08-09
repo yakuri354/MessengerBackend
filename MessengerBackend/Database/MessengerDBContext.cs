@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.ValueGeneration;
 using Npgsql;
+
 // ReSharper disable UnusedAutoPropertyAccessor.Global
 
 namespace MessengerBackend.Database
@@ -15,14 +16,16 @@ namespace MessengerBackend.Database
         public MessengerDBContext(DbContextOptions<MessengerDBContext> options) : base(options)
         {
         }
-        #nullable disable
+#nullable disable
         // public DbSet<Bot> Bots { get; set; }
         public DbSet<Message> Messages { get; set; }
         public DbSet<Room> Rooms { get; set; }
         public DbSet<Session> Sessions { get; set; }
         public DbSet<User> Users { get; set; }
         public DbSet<RoomParticipant> RoomParticipants { get; set; }
-        #nullable restore
+        public DbSet<Subscription> Subscriptions { get; set; }
+        public DbSet<Event> Events { get; set; }
+#nullable restore
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -53,8 +56,11 @@ namespace MessengerBackend.Database
             });
             modelBuilder.Entity<Message>(mb =>
             {
-                mb.ToTable("messages").Property(m => m.SentAt).ValueGeneratedOnAdd()
+                mb.ToTable("messages");
+                mb.Property(m => m.SentAt).ValueGeneratedOnAdd()
                     .HasValueGenerator<NowGenerator>();
+                mb.Property(m => m.MessagePID).ValueGeneratedOnAdd()
+                    .HasValueGenerator<PIDGenerator>();
                 mb.HasOne(m => m.TargetRoom).WithMany(r => r.Messages);
             });
             modelBuilder.Entity<Room>(rb =>
@@ -69,7 +75,8 @@ namespace MessengerBackend.Database
             //     b.ToTable("bots").HasAlternateKey(e => e.BotUsername);
             //     b.Property(p => p.JoinedAt).ValueGeneratedOnAdd().HasValueGenerator<NowGenerator>();
             // });
-            // EF Core does not support many to many so this is how I implemented it
+
+            // EF Core does not support many to many (in 3.0) so this is how I implemented it
             modelBuilder.Entity<RoomParticipant>(rpb =>
             {
                 rpb.HasKey(rp => new { rp.RoomID, rp.UserID });
@@ -80,10 +87,18 @@ namespace MessengerBackend.Database
                     .WithMany(u => u.RoomsParticipants)
                     .HasForeignKey(rp => rp.UserID);
             });
-            modelBuilder.Entity<Event>(eb =>
+            modelBuilder.Entity<Subscription>(sb =>
             {
-                
+                sb.HasMany(sbp => sbp.Events)
+                    .WithOne(e => e.Subscription);
+                sb.Property(sbp => sbp.SubscribedAt)
+                    .ValueGeneratedOnAdd()
+                    .HasValueGenerator<NowGenerator>();
+                sb.Property(sbp => sbp.SubscriptionPID)
+                    .ValueGeneratedOnAdd()
+                    .HasValueGenerator<PIDGenerator>();
             });
+            modelBuilder.Entity<Event>(eb => { });
             modelBuilder.UseHiLo();
         }
     }
@@ -98,6 +113,9 @@ namespace MessengerBackend.Database
             {
                 User _ => CryptoService.GeneratePID("U"),
                 Room _ => CryptoService.GeneratePID("R"),
+                Message _ => CryptoService.GeneratePID("M"),
+                Subscription _ => CryptoService.GeneratePID("S"),
+                Event _ => CryptoService.GeneratePID("E"),
                 // Bot _ => CryptoService.GeneratePID("B"),
                 _ => throw new ArgumentOutOfRangeException(
                     $"No PID generation available for {entry.Entity.GetType()}")

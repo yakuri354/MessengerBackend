@@ -45,27 +45,5 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </Content>
-    <Content Update="Views\GeneralController\Index.cshtml">
-      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
-      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-    </Content>
-    <Content Update="Views\ErrorController\PageNotFound.cshtml">
-      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
-      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-    </Content>
-    <Content Remove="Views\**" />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Remove="Views\**" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Remove="Views\**" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Remove="Views\**" />
-  </ItemGroup>
-  <ItemGroup>
-    <_ContentIncludedByDefault Remove="Views\Error\PageNotFound.cshtml" />
-    <_ContentIncludedByDefault Remove="Views\General\Index.cshtml" />
   </ItemGroup>
 </Project>

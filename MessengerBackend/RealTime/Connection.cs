@@ -10,8 +10,12 @@ using System.Threading.Tasks;
 using MessagePack;
 using MessengerBackend.Models;
 using MessengerBackend.Services;
+using Microsoft.AspNetCore.Authorization;
 using Newtonsoft.Json;
 using Serilog;
+
+
+// TODO Optimize reflection
 
 namespace MessengerBackend.RealTime
 {
@@ -145,25 +149,33 @@ namespace MessengerBackend.RealTime
                 {
                     case InboundMessageType.Method:
                         var method = GetMethod(message.Method);
-                        OutboundMessage reply;
-                        if (method?.ReturnType.GetMethod("GetAwaiter") != null)
+                        try
                         {
-                            reply = await (Task<OutboundMessage>)
-                                method?
-                                    .Invoke(_messageProcessService, message.Params!.ToArray())!;
+                            OutboundMessage reply;
+                            if (method?.ReturnType.GetMethod("GetAwaiter") != null)
+                            {
+                                reply = await (Task<OutboundMessage>)
+                                    method?
+                                        .Invoke(_messageProcessService, message.Params!.ToArray())!;
+                            }
+                            else
+                            {
+                                reply = (OutboundMessage)
+                                    method?
+                                        .Invoke(_messageProcessService, message.Params!.ToArray())!;
+                            }
+
+                            reply.ID = message.ID;
+                            await writer.WriteAsync(reply);
                         }
-                        else
+                        catch (ProcessException ex)
                         {
-                            reply = (OutboundMessage)
-                                method?
-                                    .Invoke(_messageProcessService, message.Params!.ToArray())!;
+                            await Fail(ex.Message, message.ID);
                         }
 
-                        reply.ID = message.ID;
-                        await writer.WriteAsync(reply);
                         break;
                     case InboundMessageType.Subscribe:
-                        await NotImplemented(message.ID);
+                        await _messageProcessService.ChatService.Subscribe((string) message!.Params![0], User!);
                         break;
                     case InboundMessageType.Unsubscribe:
                         await NotImplemented(message.ID);
@@ -198,6 +210,15 @@ namespace MessengerBackend.RealTime
                         return false;
                     }
 
+                    var isAuthorized = method.GetCustomAttribute<AuthorizeAttribute>() != null;
+                    if (isAuthorized && User == null)
+                    {
+                        await Fail($"Method {message.Method} requires authorization", message.ID);
+                        return false;
+                    }
+                    else if (isAuthorized && User != null)
+                        _messageProcessService.Caller = User;
+
                     var parameters = method.GetParameters();
                     if (parameters == null || parameters.Length == 0) return true;
                     var args = parameters.Count(p => !p.IsOptional);
@@ -226,8 +247,37 @@ namespace MessengerBackend.RealTime
 
                     break;
                 case InboundMessageType.Subscribe:
+                    if (User == null)
+                    {
+                        await Fail("Authorization required for subscriptions", message.ID);
+                        return false;
+                    }
+
+                    var parametersCount = message.Params?.Count ?? 0;
+                    if (!((parametersCount == 1 || parametersCount == 2) // either 1 or 2 params
+                          && message.Params?[0] is string) // first param is a string (channel name)
+                        && (parametersCount == 1 || message.Params?[1] is IEnumerable<object?>
+                            // second param is a list of channel parameters or null if there is only one parameter
+                        )
+                    )
+                    {
+                        await Fail("To subscribe you must provide a channel name " +
+                                   "and may provide optional parameters",
+                            message.ID);
+                        return false;
+                    }
+
+                    // TODO Verify Subscription
+                    
                     break;
                 case InboundMessageType.Unsubscribe:
+                    if (User == null)
+                    {
+                        await Fail("Authorization required for unsubscription", message.ID);
+                        return false;
+                    }
+
+                    //TODO Unsubscribe
                     break;
                 case InboundMessageType.Connect:
                     if (message.Params?[0] == null ||

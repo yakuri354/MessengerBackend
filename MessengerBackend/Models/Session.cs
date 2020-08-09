@@ -10,7 +10,7 @@ namespace MessengerBackend.Models
     {
         [Required] public DateTime CreatedAt { get; set; }
 
-        [Required] public int ExpiresIn { get; set; }
+        [Required] public DateTime ExpiresAt { get; set; }
 
         public string Fingerprint { get; set; }
 

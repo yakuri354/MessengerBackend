@@ -112,18 +112,20 @@ namespace MessengerBackend.Controllers
             var fingerprint = Request.Headers["X-Fingerprint"];
             var newSession = await _authService.AddSessionAsync(new Session
             {
-                ExpiresIn = CryptoService.JwtOptions.RefreshTokenLifetimeDays,
+                ExpiresAt = DateTime.UtcNow.AddDays(CryptoService.JwtOptions.RefreshTokenLifetimeDays),
                 Fingerprint = StringValues.IsNullOrEmpty(fingerprint) ? fingerprint.ToString() : null,
                 IPHash = SHA256.Create()
                     .ComputeHash(HttpContext.Connection.RemoteIpAddress.GetAddressBytes()),
                 UserAgent = Request.Headers["User-Agent"],
                 User = newUser,
-                UpdatedAt = DateTime.UtcNow,
-                RefreshToken = CryptoService.GenerateRefreshToken()
+                UpdatedAt = DateTime.UtcNow
             });
             return Ok(new
             {
                 refreshToken = newSession.Entity.RefreshToken,
+                refreshExpirationDate =
+                    DateTimeOffset.UtcNow.AddDays(CryptoService.JwtOptions.RefreshTokenLifetimeDays)
+                        .ToUnixTimeSeconds(),
                 accessToken = _cryptoService.CreateAccessJwt(HttpContext.Connection.RemoteIpAddress,
                     newSession.Entity.User.UserPID)
             });
@@ -141,7 +143,7 @@ namespace MessengerBackend.Controllers
             var fingerprint = Request.Headers["X-Fingerprint"];
             var newSession = await _authService.AddSessionAsync(new Session
             {
-                ExpiresIn = CryptoService.JwtOptions.RefreshTokenLifetimeDays,
+                ExpiresAt = DateTime.UtcNow.AddDays(CryptoService.JwtOptions.RefreshTokenLifetimeDays),
                 Fingerprint = StringValues.IsNullOrEmpty(fingerprint) ? fingerprint.ToString() : null,
                 IPHash = SHA256.Create()
                     .ComputeHash(HttpContext!.Connection.RemoteIpAddress.GetAddressBytes()),
@@ -152,6 +154,9 @@ namespace MessengerBackend.Controllers
             return Ok(new
             {
                 refreshToken = newSession.Entity.RefreshToken,
+                refreshExpirationDate =
+                    DateTimeOffset.UtcNow.AddDays(CryptoService.JwtOptions.RefreshTokenLifetimeDays)
+                        .ToUnixTimeSeconds(),
                 accessToken = _cryptoService.CreateAccessJwt(HttpContext.Connection.RemoteIpAddress,
                     newSession.Entity.User.UserPID)
             });
@@ -175,18 +180,16 @@ namespace MessengerBackend.Controllers
                 // || session.UserAgent != Request.Headers["User-Agent"]
             )
                 return Forbid();
-            if (session.CreatedAt.AddSeconds(session.ExpiresIn) >= DateTime.UtcNow)
+            if (session.ExpiresAt >= DateTime.UtcNow)
                 return Unauthorized();
             var newSession = await _authService.AddSessionAsync(new Session
             {
-                ExpiresIn = (DateTime.Now.AddDays(CryptoService.JwtOptions.RefreshTokenLifetimeDays) - DateTime.Now)
-                    .Seconds,
+                ExpiresAt = DateTime.UtcNow.AddDays(CryptoService.JwtOptions.RefreshTokenLifetimeDays),
                 Fingerprint = StringValues.IsNullOrEmpty(fingerprint) ? fingerprint.ToString() : null,
                 IPHash = session.IPHash,
                 UserAgent = session.UserAgent,
                 UpdatedAt = DateTime.Now,
-                User = session.User,
-                RefreshToken = CryptoService.GenerateRefreshToken()
+                User = session.User
             });
             return Ok(new
             {
