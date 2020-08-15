@@ -1,5 +1,6 @@
 using System.Collections.Generic;
-using MessagePack;
+using System.Runtime.Serialization;
+
 // ReSharper disable UnusedAutoPropertyAccessor.Global
 
 namespace MessengerBackend.RealTime
@@ -9,31 +10,38 @@ namespace MessengerBackend.RealTime
         public uint ID { get; set; }
     }
 
-    [MessagePackObject]
+    [DataContract]
     public class InboundMessage : IMessage
     {
-        [Key(0)] public InboundMessageType Type;
-        [Key(1)] public uint ID { get; set; }
-        [Key(2)] public string? Method { get; set; }
-        [Key(3)] public List<object>? Params { get; set; }
+        [DataMember(Order = 0)] public InboundMessageType Type;
+        [DataMember(Order = 2)] public string? Method { get; set; }
+
+        // [JsonConverter(typeof(JsonInt32Converter))]
+        [DataMember(Order = 3)] public List<object>? Params { get; set; }
+
+        [DataMember(Order = 1)] public uint ID { get; set; }
     }
 
     public enum InboundMessageType
     {
+        Connect,
+        Auth,
         Method,
         Subscribe,
         Unsubscribe,
-        Connect,
-        Auth
+        Response
     }
 
-    [MessagePackObject]
+    [DataContract]
     public class OutboundMessage : IMessage
     {
-        [Key(0)] public OutboundMessageType Type;
-        [Key(1)] public uint ID { get; set; }
-        [Key(2)] public bool IsSuccess { get; set; }
-        [Key(3)] public Dictionary<string, object>? Data { get; set; }
+        [DataMember(Order = 0)] public OutboundMessageType Type;
+        [DataMember(Order = 2)] public bool IsSuccess { get; set; }
+
+        // [JsonConverter(typeof(JsonInt32Converter))]
+        [DataMember(Order = 3)] public Dictionary<string, object?>? Data { get; set; }
+
+        [DataMember(Order = 1)] public uint ID { get; set; }
     }
 
     public enum OutboundMessageType

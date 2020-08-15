@@ -13,11 +13,24 @@ namespace MessengerBackend.Utils
             try
             {
                 var parsedJson = JsonConvert.DeserializeObject<T>(json);
-                if (nullable) return parsedJson;
-                if (parsedJson == null) throw new JsonParseException("Json was required, but not provided");
+                if (nullable)
+                {
+                    return parsedJson;
+                }
+
+                if (parsedJson == null)
+                {
+                    throw new JsonParseException("Json was required, but not provided");
+                }
+
                 foreach (var propertyInfo in typeof(T).GetProperties())
+                {
                     if (propertyInfo.GetValue(parsedJson) == null)
+                    {
                         throw new JsonParseException($"Field '{propertyInfo.Name}' must be provided");
+                    }
+                }
+
                 return parsedJson;
             }
             catch (JsonException e)

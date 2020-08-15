@@ -25,10 +25,10 @@ namespace MessengerBackend.RealTime
             if (ctx.Request.Path.StartsWithSegments("/ws"))
             {
                 if (ctx.WebSockets.IsWebSocketRequest)
+                {
                     try
                     {
-                        _logger.LogInformation(
-                            $"WebSocket client connected, ip {ctx.Connection.RemoteIpAddress}");
+                        messageProcessService.Connections = _srv.Connections;
                         await _srv.Connect(await ctx.WebSockets.AcceptWebSocketAsync(),
                             messageProcessService);
                         await _next(ctx);
@@ -38,8 +38,11 @@ namespace MessengerBackend.RealTime
                     {
                         await _next(ctx);
                     }
+                }
                 else
+                {
                     ctx.Response.StatusCode = 400;
+                }
             }
             else
             {

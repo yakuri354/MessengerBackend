@@ -1,6 +1,7 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+
 // ReSharper disable UnusedAutoPropertyAccessor.Global
 
 namespace MessengerBackend.Models
@@ -23,6 +24,7 @@ namespace MessengerBackend.Models
         [Required] public DateTime UpdatedAt { get; set; }
 
         [Required] public User User { get; set; }
+        public int UserID { get; set; }
 
         public string UserAgent { get; set; }
     }

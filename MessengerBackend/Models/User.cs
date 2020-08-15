@@ -5,18 +5,19 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
+
 // ReSharper disable UnusedAutoPropertyAccessor.Global
 
 namespace MessengerBackend.Models
 {
     public class User
     {
-        public IEnumerable<RoomParticipant> RoomsParticipants { get; set; }
+        public List<RoomParticipant> RoomsParticipants { get; set; }
 
-        [NotMapped] public IEnumerable<Room> Rooms => from participant in RoomsParticipants select participant.Room;
+        [NotMapped] public IEnumerable<Room> Rooms => RoomsParticipants?.Select(p => p.Room);
 
 
-        public IEnumerable<Session> Sessions { get; set; }
+        public List<Session> Sessions { get; set; }
 
         [Required] [Column(TypeName = "int")] public int UserID { get; set; }
 

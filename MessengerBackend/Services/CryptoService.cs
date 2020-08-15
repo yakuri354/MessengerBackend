@@ -17,6 +17,7 @@ namespace MessengerBackend.Services
     public class CryptoService
     {
         private static readonly RNGCryptoServiceProvider Rng = new RNGCryptoServiceProvider();
+
         // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
         private readonly IConfiguration _configuration;
 #if USERSA
@@ -104,7 +105,6 @@ namespace MessengerBackend.Services
 
         public string CreateAuthJwt(IPAddress ip, string number) =>
             JwtBuilder
-                .ExpirationTime(DateTime.Now.AddMinutes(20))
                 .AddClaim("type", "auth")
                 .AddClaim("num", number)
                 .AddClaim("ip", Convert.ToBase64String(Sha256
@@ -118,7 +118,11 @@ namespace MessengerBackend.Services
             var data = new byte[length];
             Rng.GetNonZeroBytes(data);
             var result = new StringBuilder(length);
-            foreach (var b in data) result.Append(chars[b % chars.Length]);
+            foreach (var b in data)
+            {
+                result.Append(chars[b % chars.Length]);
+            }
+
             return result.ToString();
         }
 

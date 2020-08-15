@@ -7,22 +7,28 @@ namespace MessengerBackend.Utils
 {
     internal class SerilogLoggingProvider : INpgsqlLoggingProvider
     {
-        public NpgsqlLogger CreateLogger(string name) => new SerilogLogger(name);
+        private readonly ILogger _logger;
+        internal SerilogLoggingProvider(ILogger logger) => _logger = logger;
+
+        public NpgsqlLogger CreateLogger(string name) => new NpgsqlSerilogLogger(name, _logger);
     }
 
-    internal class SerilogLogger : NpgsqlLogger
+    internal class NpgsqlSerilogLogger : NpgsqlLogger
     {
         private readonly ILogger _logger;
 
-        internal SerilogLogger(string name)
+        internal NpgsqlSerilogLogger(string name, ILogger logger)
         {
             NpgsqlLogManager.IsParameterLoggingEnabled = Serilog.Log.IsEnabled(LogEventLevel.Debug);
-            _logger = Serilog.Log.ForContext("NpgsqlName", name);
+            _logger = logger.ForContext<NpgsqlSerilogLogger>().ForContext("NpgsqlName", name);
         }
 
         public override void Log(NpgsqlLogLevel level, int connectorId, string msg, Exception? exception = null)
         {
-            _logger.Write(ToSerilogLevel(level), exception, "");
+            if (level != NpgsqlLogLevel.Debug) // TODO FIXME
+            {
+                _logger.Write(ToSerilogLevel(level), exception, msg);
+            }
         }
 
         public override bool IsEnabled(NpgsqlLogLevel level) => _logger.IsEnabled(ToSerilogLevel(level));

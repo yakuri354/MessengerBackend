@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
-using Serilog;
+using Microsoft.Extensions.Logging;
 using Twilio;
 using Twilio.Rest.Verify.V2;
 using Twilio.Rest.Verify.V2.Service;
@@ -9,23 +9,25 @@ namespace MessengerBackend.Services
 {
     public class VerificationService
     {
-        private static readonly ILogger Logger = Log.ForContext<VerificationService>();
+        private readonly ILogger<VerificationService> _logger;
         private readonly TwilioConfig _twilioConfig;
 
         public readonly double ResendInterval;
         public readonly ServiceResource TwilioService;
 
-        public VerificationService(IConfiguration configuration)
+        public VerificationService(IConfiguration configuration, ILogger<VerificationService> logger)
         {
+            _logger = logger;
             ResendInterval = configuration.GetValue<double>("SMSVerification:ResendInterval");
             _twilioConfig = new TwilioConfig(
                 configuration["Twilio:AccountSid"],
                 configuration["Twilio:AuthToken"],
                 configuration["Twilio:ServiceSid"]
             );
-            Logger.Information("Initializing Twilio");
+            _logger.LogInformation("Initializing Twilio");
             TwilioClient.Init(_twilioConfig.AccountSid, _twilioConfig.AuthToken);
             TwilioService = ServiceResource.Fetch(_twilioConfig.ServiceSid);
+            _logger.LogInformation("Twilio Initialized");
         }
 
         public async Task StartVerificationAsync(string phoneNumber, string channel) =>

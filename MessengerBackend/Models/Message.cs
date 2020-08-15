@@ -15,7 +15,10 @@ namespace MessengerBackend.Models
         [Required]
         public string MessagePID { get; set; }
 
-        public Room TargetRoom { get; set; }
+        [Required] public virtual Room TargetRoom { get; set; }
+
+        public int TargetRoomID { get; set; }
+
         public string Text { get; set; }
         public User Sender { get; set; }
         public DateTime SentAt { get; set; }

@@ -10,7 +10,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Primitives;
 using Microsoft.Net.Http.Headers;
-using PhoneNumbers;
 
 namespace MessengerBackend.Controllers
 {
@@ -79,8 +78,8 @@ namespace MessengerBackend.Controllers
                 });
             var formattedNumber = _phoneHelper.ParseNumber(input.number);
 
-            var success = await _verificationService.CheckVerificationAsync(formattedNumber, input.code);
-            if (!success) return Forbid();
+            // var success = await _verificationService.CheckVerificationAsync(formattedNumber, input.code);
+            // if (!success) return Forbid();
 
             return Ok(new
             {
@@ -108,7 +107,11 @@ namespace MessengerBackend.Controllers
             var newUser = await _userService.AddUserAsync(HttpContext.User.FindFirst("num").Value, input.firstName,
                 input.lastName);
 
-            if (newUser == null) return Forbid();
+            if (newUser == null)
+            {
+                return Forbid();
+            }
+
             var fingerprint = Request.Headers["X-Fingerprint"];
             var newSession = await _authService.AddSessionAsync(new Session
             {
@@ -137,9 +140,13 @@ namespace MessengerBackend.Controllers
         [Authorize(Policy = "AuthToken")]
         public async Task<IActionResult> Login()
         {
-            var user = await _userService.Users.FirstOrDefaultAsync(
+            var user = await _userService.Users.SingleOrDefaultAsync(
                 u => u.Number == HttpContext.User.FindFirst("num").Value);
-            if (user == null) return Forbid();
+            if (user == null)
+            {
+                return Forbid();
+            }
+
             var fingerprint = Request.Headers["X-Fingerprint"];
             var newSession = await _authService.AddSessionAsync(new Session
             {
@@ -173,15 +180,25 @@ namespace MessengerBackend.Controllers
             var token = Request.Headers[HeaderNames.Authorization];
             var fingerprint = Request.Headers["X-Fingerprint"];
             var session = await _authService.GetAndDeleteSessionAsync(token);
-            if (session == null) return Forbid();
+            if (session == null)
+            {
+                return Forbid();
+            }
+
             if (session.Fingerprint != null && session.Fingerprint !=
                 (StringValues.IsNullOrEmpty(fingerprint) ? fingerprint.ToString() : null)
                 // || session.IPHash != HttpContext.Connection.RemoteIpAddress.GetAddressBytes()
                 // || session.UserAgent != Request.Headers["User-Agent"]
             )
+            {
                 return Forbid();
+            }
+
             if (session.ExpiresAt >= DateTime.UtcNow)
+            {
                 return Unauthorized();
+            }
+
             var newSession = await _authService.AddSessionAsync(new Session
             {
                 ExpiresAt = DateTime.UtcNow.AddDays(CryptoService.JwtOptions.RefreshTokenLifetimeDays),

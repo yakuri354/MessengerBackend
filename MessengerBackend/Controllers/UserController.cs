@@ -22,9 +22,13 @@ namespace MessengerBackend.Controllers
         [Produces("application/json")]
         public async Task<IActionResult> Me()
         {
-            var user = await _userService.Users.FirstOrDefaultAsync(
+            var user = await _userService.Users.SingleOrDefaultAsync(
                 u => u.UserPID == HttpContext.User.FindFirst("uid").Value);
-            if (user == null) return NotFound();
+            if (user == null)
+            {
+                return NotFound();
+            }
+
             return Ok(new
             {
                 username = user.Username ?? "",
@@ -50,19 +54,42 @@ namespace MessengerBackend.Controllers
             }, true);
             if (input == null || input.firstName == null && input.lastName == null && input.userName == null &&
                 input.bio == null)
+            {
                 throw new JsonParseException("No changes provided");
-            var user = await _userService.Users.FirstOrDefaultAsync(
+            }
+
+            var user = await _userService.Users.SingleOrDefaultAsync(
                 u => u.UserPID == HttpContext.User.FindFirst("uid").Value);
-            if (user == null) return NotFound();
-            if (input.firstName != null) user.FirstName = input.firstName;
+            if (user == null)
+            {
+                return NotFound();
+            }
 
-            if (input.lastName != null) user.LastName = input.lastName;
+            if (input.firstName != null)
+            {
+                user.FirstName = input.firstName;
+            }
 
-            if (input.userName != null) user.Username = input.userName;
+            if (input.lastName != null)
+            {
+                user.LastName = input.lastName;
+            }
 
-            if (input.bio != null) user.Bio = input.bio;
+            if (input.userName != null)
+            {
+                user.Username = input.userName;
+            }
+
+            if (input.bio != null)
+            {
+                user.Bio = input.bio;
+            }
+
             if (await _userService.SaveUserAsync(user))
+            {
                 return Ok();
+            }
+
             return Forbid();
         }
     }

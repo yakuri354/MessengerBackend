@@ -8,7 +8,8 @@ namespace MessengerBackend.Policies
 {
     public class IPCheckRequirement : IAuthorizationRequirement
     {
-        public bool IpClaimRequired { get; set; } = true;
+        public IPCheckRequirement(bool required) => IpClaimRequired = required;
+        public bool IpClaimRequired { get; set; }
     }
 
     public class IPCheckHandler : AuthorizationHandler<IPCheckRequirement>
@@ -35,13 +36,19 @@ namespace MessengerBackend.Policies
                 // Optional claims (IsClaimRequired=false and no "ip" in the claims principal) won't call context.Fail()
                 // This allows next Handle to succeed. If we call Fail() the access will be denied, even if handlers
                 // evaluated after this one do succeed
+            {
                 return Task.CompletedTask;
+            }
 
             if (_cryptoService.IPValid(HttpContext.Connection.RemoteIpAddress, ipClaim?.Value ?? ""))
+            {
                 context.Succeed(requirement);
+            }
             else
                 // Only call fail, to guarantee a failure, even if further handlers may succeed
+            {
                 context.Fail();
+            }
 
             return Task.CompletedTask;
         }

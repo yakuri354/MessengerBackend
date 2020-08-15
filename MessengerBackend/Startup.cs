@@ -2,6 +2,8 @@
 
 using System;
 using AspNetCoreRateLimit;
+using MessagePack;
+using MessagePack.Resolvers;
 using MessengerBackend.Database;
 using MessengerBackend.Errors;
 using MessengerBackend.Policies;
@@ -23,6 +25,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Logging;
 using Newtonsoft.Json;
 using Npgsql.Logging;
+using Serilog;
 using Twilio.Exceptions;
 using NewtonsoftJsonException = Newtonsoft.Json.JsonException;
 
@@ -31,10 +34,12 @@ namespace MessengerBackend
     public class Startup
     {
         private readonly CryptoService _cryptoService;
+        private readonly IWebHostEnvironment _env;
 
-        public Startup(IConfiguration configuration)
+        public Startup(IConfiguration configuration, IWebHostEnvironment env)
         {
             Configuration = configuration;
+            _env = env;
             _cryptoService = new CryptoService(configuration);
         }
 
@@ -71,30 +76,38 @@ namespace MessengerBackend
             }
             services.AddSingleton(_cryptoService);
 
-            NpgsqlLogManager.Provider = new SerilogLoggingProvider();
-
-            services.AddDbContext<MessengerDBContext>(builder => builder
-                .UseNpgsql(Configuration["Database:ConnectionString"]
-                           ?? throw new ArgumentException("No connection string provided"),
-                    o => o.SetPostgresVersion(12, 3)));
+            services.AddDbContext<MessengerDBContext>(builder =>
+            {
+                builder
+                    .UseNpgsql(Configuration["Database:ConnectionString"]
+                               ?? throw new ArgumentException("No connection string provided"),
+                        o => o
+                            .EnableRetryOnFailure()
+                            .SetPostgresVersion(12, 3));
+                if (_env.IsDevelopment())
+                {
+                    builder.EnableSensitiveDataLogging();
+                }
+            });
 
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(cfg =>
             {
                 cfg.TokenValidationParameters = _cryptoService.TokenValidationParameters;
             });
 
+            services.AddSingleton<IAuthorizationHandler, IPCheckHandler>();
+
             services.AddAuthorization(options =>
             {
                 options.DefaultPolicy = new AuthorizationPolicyBuilder()
                     .AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme)
-                    .RequireAuthenticatedUser()
                     .RequireClaim("type", "access")
-                    .AddRequirements(new IPCheckRequirement())
+                    .AddRequirements(new IPCheckRequirement(true))
                     .Build();
                 options.AddPolicy("AuthToken", pol =>
-                    pol.AddRequirements(new IPCheckRequirement())
+                    pol
+                        .AddRequirements(new IPCheckRequirement(true))
                         .AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme)
-                        .RequireAuthenticatedUser()
                         .RequireClaim("type", "auth"));
             });
 
@@ -106,6 +119,7 @@ namespace MessengerBackend
 
             services.AddScoped<UserService>();
             services.AddScoped<AuthService>();
+            services.AddScoped<ChatService>();
             services.AddScoped<MessageProcessService>();
 
             services.AddSwaggerDocument();
@@ -114,15 +128,20 @@ namespace MessengerBackend
             services.AddHttpContextAccessor();
             services.TryAddSingleton<IActionContextAccessor, ActionContextAccessor>();
 
+            MessagePackSerializer.DefaultOptions = ContractlessStandardResolver.Options;
+
             services.Configure<KestrelServerOptions>(options => { options.AllowSynchronousIO = true; });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        public void Configure(IApplicationBuilder app)
         {
-            NpgsqlLogManager.Provider = new ConsoleLoggingProvider();
+            NpgsqlLogManager.Provider = new SerilogLoggingProvider(Log.Logger);
 
-            if (env.IsDevelopment())
+
+            app.UseSerilogRequestLogging(); // <-- Add this line
+
+            if (_env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
                 app.UseDatabaseErrorPage();
@@ -159,7 +178,10 @@ namespace MessengerBackend
                 {
                     ctx.Response.StatusCode = ex.HttpStatusCode;
                     ctx.Response.ContentType = "application/json";
-                    foreach (var (key, value) in ex.HttpHeaders) ctx.Response.Headers[key] = value;
+                    foreach (var (key, value) in ex.HttpHeaders)
+                    {
+                        ctx.Response.Headers[key] = value;
+                    }
 
                     await ctx.Response.WriteAsync(JsonConvert.SerializeObject(new
                     {
@@ -177,7 +199,7 @@ namespace MessengerBackend
                     {
                         type = "twilio",
                         twilioErrorCode = ex.Code,
-                        details = ex.Message,
+                        // details = ex.Message,
                         moreInfo = ex.MoreInfo
                     }));
                 }

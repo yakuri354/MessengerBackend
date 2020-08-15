@@ -82,17 +82,26 @@ namespace MessengerBackend.Errors
             get
             {
                 if (_requiredType != null && _actualType != null)
+                {
                     return "Type '" + _requiredType + "' was expected, instead got '" + _actualType + "'";
+                }
+
                 if (_requiredType != null && _actualType == null)
+                {
                     return "Type '" + _requiredType + "' was expected";
+                }
+
                 if (_requiredType == null && _actualType != null)
+                {
                     return "Type '" + _actualType + "' unexpected";
+                }
+
                 return "";
             }
         }
     }
 
-    #nullable disable
+#nullable disable
     public class TokenVerificationFailedException : ApiErrorException
     {
         public TokenVerificationFailedException(string message) => Message = message;
@@ -107,5 +116,5 @@ namespace MessengerBackend.Errors
 
         public override string Message { get; }
     }
-    #nullable restore
+#nullable restore
 }
