@@ -200,8 +200,7 @@ namespace MessengerBackend.Utils
                 throw new ArgumentNullException(nameof(der));
             }
 
-            var sequence = der as DerAsnSequence;
-            if (sequence == null)
+            if (!(der is DerAsnSequence sequence))
             {
                 throw new ArgumentException($"{nameof(der)} is not a sequence");
             }

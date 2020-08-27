@@ -44,42 +44,31 @@ namespace MessengerBackend.Controllers
          * <response code="400">Code sending error</response>
          * <response code="429">Too many attempts</response>
          */
-        [Consumes("application/json")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [HttpPost("sendCode")]
-        public async Task<IActionResult> SendCode()
+        public async Task<IActionResult> SendCode(string number, string channel)
         {
-            var input =
-                MyJsonDeserializer.DeserializeAnonymousType(Request.Body.GetString(), new
-                {
-                    number = "",
-                    channel = ""
-                });
-            var number = _phoneHelper.ParseNumber(input.number);
+            var parsedNum = _phoneHelper.ParseNumber(number);
 
-            await _verificationService.StartVerificationAsync(number, input.channel);
+            await _verificationService.StartVerificationAsync(parsedNum, channel);
 
             return Ok();
         }
 
-        [Consumes("application/json")]
         [Produces("application/json")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [HttpPost("verifyCode")]
-        public async Task<IActionResult> VerifyCode()
+        public async Task<IActionResult> VerifyCode(string number, string code)
         {
-            var input = MyJsonDeserializer.DeserializeAnonymousType(
-                Request.Body.GetString(), new
-                {
-                    number = "",
-                    code = ""
-                });
-            var formattedNumber = _phoneHelper.ParseNumber(input.number);
+            var formattedNumber = _phoneHelper.ParseNumber(number);
 
-            // var success = await _verificationService.CheckVerificationAsync(formattedNumber, input.code);
-            // if (!success) return Forbid();
+            var success = await _verificationService.CheckVerificationAsync(formattedNumber, code);
+            if (!success)
+            {
+                return Forbid();
+            }
 
             return Ok(new
             {
@@ -88,24 +77,15 @@ namespace MessengerBackend.Controllers
             });
         }
 
-        [Consumes("application/json")]
         [Produces("application/json")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [HttpPost("register")]
         [Authorize(Policy = "AuthToken")]
-        public async Task<IActionResult> Register()
+        public async Task<IActionResult> Register(string firstName, string lastName, string username)
         {
-            var input = MyJsonDeserializer.DeserializeAnonymousType(
-                Request.Body.GetString(), new
-                {
-                    firstName = "",
-                    lastName = "",
-                    username = ""
-                });
-
-            var newUser = await _userService.AddUserAsync(HttpContext.User.FindFirst("num").Value, input.firstName,
-                input.lastName);
+            var newUser = await _userService.AddUserAsync(
+                HttpContext.User.FindFirst("num").Value, firstName, lastName, username);
 
             if (newUser == null)
             {
@@ -136,7 +116,6 @@ namespace MessengerBackend.Controllers
 
         [HttpPost("login")]
         [Produces("application/json")]
-        [Consumes("application/json")]
         [Authorize(Policy = "AuthToken")]
         public async Task<IActionResult> Login()
         {
@@ -169,7 +148,6 @@ namespace MessengerBackend.Controllers
             });
         }
 
-        [Consumes("application/json")]
         [Produces("application/json")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]

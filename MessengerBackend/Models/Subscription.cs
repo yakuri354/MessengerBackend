@@ -12,7 +12,6 @@ namespace MessengerBackend.Models
 
         public User User { get; set; }
 
-        // public string Channel { get; set; }
         public Room Room { get; set; }
         public SubscriptionType Type { get; set; }
         public DateTime SubscribedAt { get; set; }

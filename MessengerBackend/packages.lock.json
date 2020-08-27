@@ -280,6 +280,12 @@
           "Serilog": "2.9.0"
         }
       },
+      "SonarAnalyzer.CSharp": {
+        "type": "Direct",
+        "requested": "[8.11.0.20529, )",
+        "resolved": "8.11.0.20529",
+        "contentHash": "vOg4K+A0ivd8equOBZackV+k9ak927aNvPofEtSGePHydc77fKiN6eGESaP7qdq52L02+kllT+OSCww1/5VsCQ=="
+      },
       "Twilio": {
         "type": "Direct",
         "requested": "[5.43.0, )",

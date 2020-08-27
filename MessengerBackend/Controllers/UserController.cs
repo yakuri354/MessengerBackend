@@ -1,7 +1,5 @@
 ﻿using System.Threading.Tasks;
-using MessengerBackend.Errors;
 using MessengerBackend.Services;
-using MessengerBackend.Utils;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -43,19 +41,11 @@ namespace MessengerBackend.Controllers
         [HttpPost("me")]
         [Consumes("application/json")]
         [Produces("application/json")]
-        public async Task<IActionResult> EditMe()
+        public async Task<IActionResult> EditMe(string? firstName, string? lastName, string? userName, string? bio)
         {
-            var input = MyJsonDeserializer.DeserializeAnonymousType(Request.Body.GetString(), new
+            if (firstName == null && lastName == null && userName == null && bio == null)
             {
-                firstName = "",
-                lastName = "",
-                userName = "",
-                bio = ""
-            }, true);
-            if (input == null || input.firstName == null && input.lastName == null && input.userName == null &&
-                input.bio == null)
-            {
-                throw new JsonParseException("No changes provided");
+                return BadRequest("No changes provided");
             }
 
             var user = await _userService.Users.SingleOrDefaultAsync(
@@ -65,24 +55,24 @@ namespace MessengerBackend.Controllers
                 return NotFound();
             }
 
-            if (input.firstName != null)
+            if (firstName != null)
             {
-                user.FirstName = input.firstName;
+                user.FirstName = firstName;
             }
 
-            if (input.lastName != null)
+            if (lastName != null)
             {
-                user.LastName = input.lastName;
+                user.LastName = lastName;
             }
 
-            if (input.userName != null)
+            if (userName != null)
             {
-                user.Username = input.userName;
+                user.Username = userName;
             }
 
-            if (input.bio != null)
+            if (bio != null)
             {
-                user.Bio = input.bio;
+                user.Bio = bio;
             }
 
             if (await _userService.SaveUserAsync(user))

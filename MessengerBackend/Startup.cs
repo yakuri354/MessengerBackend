@@ -92,7 +92,7 @@ namespace MessengerBackend
 
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(cfg =>
             {
-                cfg.TokenValidationParameters = _cryptoService.TokenValidationParameters;
+                cfg.TokenValidationParameters = _cryptoService.ValidationParameters;
             });
 
             services.AddSingleton<IAuthorizationHandler, IPCheckHandler>();

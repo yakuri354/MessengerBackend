@@ -149,9 +149,9 @@ namespace MessengerBackend.Utils
             public async Task<T> InvokeGenericAsync<T>(object target, params object[] args) =>
                 _func(target, args) switch
                 {
-                    Task<T> task => await task,
+                    Task<T> task => await task.ConfigureAwait(false),
                     T sync => sync,
-                    _ => throw new ArgumentOutOfRangeException()
+                    _ => throw new ArgumentException($"Method returns something other than {typeof(T)}")
                 };
 
             public static Func<object, object[], object> CreateMethodWrapper(Type type, MethodInfo method,
@@ -205,7 +205,7 @@ namespace MessengerBackend.Utils
                 var targetExp = Expression.Parameter(typeof(object), "target");
                 var argsExp = Expression.Parameter(typeof(object[]), "args");
                 var castArgExp = Expression.Convert(targetExp, type);
-                var propExp = Expression.Property(castArgExp, property);
+                var propExp = Expression.Property(castArgExp, property!);
                 var castPropExp = Expression.Convert(propExp, typeof(object));
                 var lambdaExp = Expression.Lambda(castPropExp, targetExp, argsExp);
                 var lambda = lambdaExp.Compile();
@@ -220,10 +220,10 @@ namespace MessengerBackend.Utils
                     x.Type == y.Type &&
                     StringComparer.Ordinal.Equals(x.Name, y.Name);
 
-                public int GetHashCode(MethodKey key)
+                public int GetHashCode(MethodKey obj)
                 {
-                    var typeCode = key.Type.GetHashCode();
-                    var methodCode = key.Name.GetHashCode();
+                    var typeCode = obj.Type.GetHashCode();
+                    var methodCode = obj.Name.GetHashCode();
                     return CombineHashCodes(typeCode, methodCode);
                 }
 
@@ -296,19 +296,20 @@ namespace MessengerBackend.Utils
     public class EfficientReflectionDelegate<T>
     {
         private readonly EfficientInvoker _invoker;
-        public MethodInfo MethodInfo;
 
-        public EfficientReflectionDelegate(
+        protected EfficientReflectionDelegate(
             Type type,
             MethodInfo methodInfo,
             bool authenticated)
         {
-            MethodInfo = methodInfo;
+            Info = methodInfo;
             _invoker = new EfficientInvoker(EfficientInvoker
                 .CreateMethodWrapper(type, methodInfo, false));
         }
 
+        public MethodInfo Info { get; }
+
         protected async Task<T> Invoke(object target, object[] parameters) =>
-            await _invoker.InvokeGenericAsync<T>(target, parameters);
+            await _invoker.InvokeGenericAsync<T>(target, parameters).ConfigureAwait(false);
     }
 }

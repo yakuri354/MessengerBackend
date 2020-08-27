@@ -47,7 +47,7 @@ namespace MessengerBackend
         // Obtain the custom attribute for the method. 
         // The value returned contains the StateMachineType property. 
         // Null is returned if the attribute isn't present for the method. 
-        public static bool isAsync(this MethodInfo methodInfo) =>
+        public static bool IsAsync(this MethodInfo methodInfo) =>
             methodInfo.GetCustomAttribute(
                 typeof(AsyncStateMachineAttribute)) is AsyncStateMachineAttribute;
 

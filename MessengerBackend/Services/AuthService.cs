@@ -19,7 +19,7 @@ namespace MessengerBackend.Services
 
         public async Task<Session?> GetAndDeleteSessionAsync(string token)
         {
-            var session = await GetSessionAsync(token);
+            var session = await GetSessionAsync(token).ConfigureAwait(false);
             if (session == null)
             {
                 return null;

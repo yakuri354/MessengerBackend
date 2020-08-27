@@ -34,6 +34,7 @@
     <PackageReference Include="Serilog.Enrichers.Demystify" Version="1.0.0-dev-00019" />
     <PackageReference Include="Serilog.Enrichers.Dynamic" Version="1.0.9" />
     <PackageReference Include="Serilog.Settings.Configuration" Version="3.2.0-dev-00244" />
+    <PackageReference Include="SonarAnalyzer.CSharp" Version="8.11.0.20529" />
     <PackageReference Include="Twilio" Version="5.43.0" />
   </ItemGroup>
 

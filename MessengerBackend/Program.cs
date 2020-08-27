@@ -9,15 +9,15 @@ namespace MessengerBackend
 {
     public static class Program
     {
-        public static LogEventLevel LogEventLevel = LogEventLevel.Debug;
-
-        public static LoggerConfiguration LoggerConfiguration = new LoggerConfiguration()
-            .MinimumLevel.Is(LogEventLevel)
+        private static readonly LoggerConfiguration LoggerConfiguration = new LoggerConfiguration()
+            .MinimumLevel.Is(EventLevel)
             .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
             .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Warning)
             .MinimumLevel.Override("Npgsql", LogEventLevel.Information)
             .Enrich.FromLogContext()
             .WriteTo.Console();
+
+        public static LogEventLevel EventLevel { get; } = LogEventLevel.Debug;
 
         public static async Task<int> Main(string[] args)
         {
@@ -42,16 +42,11 @@ namespace MessengerBackend
             }
         }
 
-        public static IHostBuilder CreateHostBuilder(string[] args)
+        private static IHostBuilder CreateHostBuilder(string[] args)
         {
             return Host.CreateDefaultBuilder(args)
                 .UseSerilog()
                 .ConfigureWebHostDefaults(webBuilder => webBuilder.UseStartup<Startup>().UseKestrel());
-        }
-
-        public class TestClass
-        {
-            public static int Add(int a, int b) => a + b;
         }
     }
 }

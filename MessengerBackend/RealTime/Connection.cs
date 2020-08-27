@@ -20,7 +20,7 @@ using Serilog;
 
 namespace MessengerBackend.RealTime
 {
-    public class Connection : IDisposable
+    public sealed class Connection : IDisposable
     {
         private readonly CancellationTokenSource _cancellationTokenSource =
             new CancellationTokenSource();
@@ -30,7 +30,6 @@ namespace MessengerBackend.RealTime
 
         private readonly ConcurrentDictionary<string, MethodDelegate> _delegates =
             new ConcurrentDictionary<string, MethodDelegate>();
-        // private readonly TaskCompletionSource<object> _taskCompletionSource;
 
         private readonly Channel<InboundMessage> _inboundMessages =
             Channel.CreateBounded<InboundMessage>(10000);
@@ -49,8 +48,6 @@ namespace MessengerBackend.RealTime
         private bool _connectReceived;
         private SerializationType _serializationType;
 
-        public User? User;
-
         public Connection(WebSocket socket, ulong connectionID, MessageProcessService messageProcessService,
             CryptoService cryptoService)
         {
@@ -58,9 +55,9 @@ namespace MessengerBackend.RealTime
             _connectionID = connectionID;
             _messageProcessService = messageProcessService;
             _logger = new LoggerConfiguration()
-                .MinimumLevel.Is(Program.LogEventLevel)
+                .MinimumLevel.Is(Program.EventLevel)
                 .Enrich.WithDemystifiedStackTraces()
-                .Enrich.WithDynamicProperty("UserID", () => User?.UserID.ToString() ?? "<null>")
+                .Enrich.WithDynamicProperty("UserID", () => CurrentUser?.UserID.ToString() ?? "<null>")
                 .WriteTo.Console(
                     outputTemplate:
                     "[{Timestamp:HH:mm:ss} {Level:u3}] [CONN {ConnectionID}] [MSG {MessageID}] [USR {UserID}]" +
@@ -74,16 +71,12 @@ namespace MessengerBackend.RealTime
             _logger.Information("New connection established");
         }
 
+        public User? CurrentUser { get; set; }
+
         public void Dispose()
         {
             _cancellationTokenSource.Cancel();
         }
-
-        // public void SetupDependencies(UserService userService, ChatService chatService)
-        // {
-        //     UserService = userService;
-        //     ChatService = chatService;
-        // }
 
         public event EventHandler? ConnectionClosed;
 
@@ -95,7 +88,6 @@ namespace MessengerBackend.RealTime
 
         public async Task StartPolling()
         {
-            // using var _ = LogContext.PushProperty("Connection", this);
             _logger.Debug("Started polling", _connectionID);
             await Task.WhenAll(ReceivePollAsync(), SendPollAsync(), ProcessPollAsync());
         }
@@ -134,10 +126,6 @@ namespace MessengerBackend.RealTime
 
                 await writer.WriteAsync(message,
                     _cancellationTokenSource.Token);
-                // await writer.WriteAsync(new InboundMessage
-                // {
-                //     ID = 1, Type = InboundMessageType.Method
-                // }, _cancellationTokenSource.Token);
             }
         }
 
@@ -149,7 +137,7 @@ namespace MessengerBackend.RealTime
                 try
                 {
                     var msg = Serialize(message);
-                    if (msg == null)
+                    if (msg.Length == 0)
                     {
                         continue;
                     }
@@ -206,8 +194,10 @@ namespace MessengerBackend.RealTime
                 {
                     await writer.WriteAsync(message.Type switch
                     {
-                        InboundMessageType.Method => await CallMethod(message, logger),
-                        InboundMessageType.Subscribe => await Subscribe(message, logger),
+                        InboundMessageType.Method => await CallMethod(message, logger)
+                            .ConfigureAwait(false),
+                        InboundMessageType.Subscribe => await Subscribe(message, logger)
+                            .ConfigureAwait(false),
                         InboundMessageType.Unsubscribe => await Unsubscribe(message, logger),
                         InboundMessageType.Connect => Connect(message, logger),
                         InboundMessageType.Auth => await Authenticate(message, logger),
@@ -247,7 +237,7 @@ namespace MessengerBackend.RealTime
                 return Fail(vResult, message.ID);
             }
 
-            var (_, claimsPrincipal) = _cryptoService.ValidateAccessJWT((string) message.Params![0]);
+            var claimsPrincipal = _cryptoService.ValidateAccessJWT((string) message.Params![0]);
             if (!claimsPrincipal.HasClaim("type", "access"))
             {
                 logger.Information("Authentication failed: invalid token");
@@ -261,9 +251,9 @@ namespace MessengerBackend.RealTime
                 return Fail("Wrong token", message.ID);
             }
 
-            User = await _messageProcessService.UserService.Users
+            CurrentUser = await _messageProcessService.UserService.Users
                 .SingleOrDefaultAsync(user => user.UserPID == pid);
-            if (User == null)
+            if (CurrentUser == null)
             {
                 logger.Information("Authentication failed");
                 return Fail("Authorization failed", message.ID);
@@ -286,13 +276,13 @@ namespace MessengerBackend.RealTime
 
             var method = _delegates[message.Method];
 
-            if (method.Authenticated && User == null)
+            if (method.Authenticated && CurrentUser == null)
             {
                 logger.Information("Method {Method} unauthorized", message.Method);
                 return Fail($"Method {message.Method} requires authorization", message.ID);
             }
 
-            var vResult = Verify(message, b => b.Method(method.MethodInfo), logger);
+            var vResult = Verify(message, b => b.Method(method.Info), logger);
             if (vResult != null)
             {
                 return Fail(vResult, message.ID);
@@ -300,7 +290,8 @@ namespace MessengerBackend.RealTime
 
             _messageProcessService.Current = this;
             _messageProcessService.CurrentMessageID = message.ID;
-            var reply = await method.InvokeAsync(message.Params!.ToArray());
+            var reply = await method.InvokeAsync(message.Params!.ToArray())
+                .ConfigureAwait(false);
             logger.Debug("Method {Method} invocation finished", message.Method);
             reply.ID = message.ID;
             return reply;
@@ -323,20 +314,12 @@ namespace MessengerBackend.RealTime
         private async Task<OutboundMessage> Subscribe(InboundMessage message, ILogger logger)
         {
             logger.Debug("Subscribing");
-            if (User == null)
+            if (CurrentUser == null)
             {
                 logger.Information("Subscription unauthorized", message.Method);
                 return Fail("Authorization required for subscriptions", message.ID);
             }
 
-            // var parametersCount = message.Params?.Count ?? 0;
-            // if (!(message.Params != null && // params are not null
-            //       (parametersCount == 1 || parametersCount == 2) // either 1 or 2 params
-            //       && message.Params?[0] is string) // first param is a string (channel name)
-            //     && (parametersCount == 1 || message.Params?[1] is IEnumerable<object?>
-            //         // second param is a list of channel parameters or null if there is only one parameter
-            //     )
-            // )
             var vResult = Verify(message, b => b
                 .Argument<string>()
                 .Argument<ICollection<object>>(null, false), logger);
@@ -363,17 +346,17 @@ namespace MessengerBackend.RealTime
             var room = await _messageProcessService.ChatService.Rooms.Include(
                     r => r.Participants)
                 .SingleOrDefaultAsync(r => r.RoomPID == addr[0]);
-            if (!(room?.Users?.Any(u => u.UserID == User.UserID) ?? false))
+            if (!(room?.Users?.Any(u => u.UserID == CurrentUser.UserID) ?? false))
             {
                 logger.Information("User {UserID} not found in room {RoomID} when subscribing to {Channel}",
-                    User.UserID, room?.RoomID.ToString() ?? "<unknown>");
+                    CurrentUser.UserID, room?.RoomID.ToString() ?? "<unknown>");
                 return Fail("Access Denied",
                     message.ID);
             }
 
             if (_messageProcessService.ChatService.Subscriptions
                 .Include(s => s.User)
-                .Any(s => s.Room.RoomID == room.RoomID && s.User.UserID == User.UserID))
+                .Any(s => s.Room.RoomID == room!.RoomID && s.User.UserID == CurrentUser.UserID))
             {
                 logger.Information("Subscription on channel {Channel} already exists", channel);
                 return Fail("Subscription already exists",
@@ -385,7 +368,7 @@ namespace MessengerBackend.RealTime
                 {
                     Room = room!,
                     Type = (SubscriptionType) subType!,
-                    User = User
+                    User = CurrentUser
                 });
             logger.Information(
                 "Successfully subscribed to {Channel}", (string) message.Params[0]);
@@ -398,7 +381,7 @@ namespace MessengerBackend.RealTime
 
         private async Task<OutboundMessage> Unsubscribe(InboundMessage message, ILogger logger)
         {
-            if (User == null)
+            if (CurrentUser == null)
             {
                 logger.Information("Unsubscription unauthorized");
                 return Fail("Authorization required for unsubscription", message.ID);
@@ -411,7 +394,7 @@ namespace MessengerBackend.RealTime
             }
 
             var sub = await
-                _messageProcessService.ChatService.Unsubscribe((string) message!.Params![0], User);
+                _messageProcessService.ChatService.Unsubscribe((string) message!.Params![0], CurrentUser);
             if (sub == null)
             {
                 logger.Information("Failed to unsubscribe", message.Method);
@@ -449,7 +432,6 @@ namespace MessengerBackend.RealTime
             };
         }
 
-        // private OutboundMessage NotImplemented(uint id) => Fail("Not implemented", id);
         private OutboundMessage Success(uint id)
         {
             _logger.ForContext("MessageID", id).Debug("Success");
@@ -495,7 +477,7 @@ namespace MessengerBackend.RealTime
             }
         }
 
-        private byte[]? Serialize(OutboundMessage message)
+        private byte[] Serialize(OutboundMessage message)
         {
             try
             {
@@ -509,7 +491,7 @@ namespace MessengerBackend.RealTime
             catch (Exception e) when (e is JsonException || e is MessagePackSerializationException)
             {
                 _logger.Error(e, "Serialization error for outbound message ID {MessageID}");
-                return null;
+                return new byte[0];
             }
         }
 

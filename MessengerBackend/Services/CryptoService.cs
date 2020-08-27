@@ -19,7 +19,6 @@ namespace MessengerBackend.Services
         private static readonly RNGCryptoServiceProvider Rng = new RNGCryptoServiceProvider();
 
         // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
-        private readonly IConfiguration _configuration;
 #if USERSA
         public JwtBuilder JwtBuilder => new JwtBuilder()
             .WithAlgorithm(new RS256Algorithm(PublicKey, PrivateKey))
@@ -30,44 +29,43 @@ namespace MessengerBackend.Services
 
         public readonly RSACryptoServiceProvider PublicKey;
 #elif USEHMAC
-        public JwtBuilder JwtBuilder => new JwtBuilder()
+        private JwtBuilder JwtBuilder => new JwtBuilder()
             .WithAlgorithm(new HMACSHA256Algorithm())
-            .WithSecret(HMACKey)
+            .WithSecret(_hmacKey)
             .Issuer(JwtOptions.Issuer)
             .Audience(JwtOptions.Audience);
 
-        public readonly string HMACKey;
+        private readonly string _hmacKey;
 #endif
         private readonly JwtSecurityTokenHandler _jwtSecurityTokenHandler = new JwtSecurityTokenHandler();
 
-        public readonly SHA256 Sha256;
+        private readonly SHA256 _sha256;
 
         public bool IPValid(IPAddress realIP, string base64EncodedIP) =>
-            Sha256
+            _sha256
                 .ComputeHash(realIP.GetAddressBytes())
                 .SequenceEqual(Convert.FromBase64String(base64EncodedIP));
 
         public CryptoService(IConfiguration configuration)
         {
-            _configuration = configuration;
-            Sha256 = SHA256.Create();
+            _sha256 = SHA256.Create();
 
 #if USERSA
-            using (var sr = new StringReader(_configuration["JWT:RSAPublicKey"]))
+            using (var sr = new StringReader(configuration["JWT:RSAPublicKey"]))
             {
                 PublicKey = new RSACryptoServiceProvider();
                 PublicKey.ImportParameters(new PemReader(sr).ReadRsaKey());
             }
 
-            using (var sr = new StringReader(_configuration["JWT:RSAPrivateKey"]))
+            using (var sr = new StringReader(configuration["JWT:RSAPrivateKey"]))
             {
                 PrivateKey = new RSACryptoServiceProvider();
                 PrivateKey.ImportParameters(new PemReader(sr).ReadRsaKey());
             }
 #elif USEHMAC
-            HMACKey = _configuration["JWT:HMACKey"];
+            _hmacKey = configuration["JWT:HMACKey"];
 #endif
-            TokenValidationParameters = new TokenValidationParameters
+            ValidationParameters = new TokenValidationParameters
             {
                 ValidateLifetime = true,
                 ValidateIssuerSigningKey = true,
@@ -79,7 +77,7 @@ namespace MessengerBackend.Services
 #if USERSA
                     IssuerSigningKey = new RsaSecurityKey(cryptoService.PublicKey)
 #elif USEHMAC
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(HMACKey))
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_hmacKey))
 #endif
             };
         }
@@ -97,7 +95,7 @@ namespace MessengerBackend.Services
                 .AddClaim("type", "access")
                 .AddClaim("jti", GenerateJti())
                 .AddClaim("ip",
-                    Convert.ToBase64String(Sha256
+                    Convert.ToBase64String(_sha256
                         .ComputeHash(ip.GetAddressBytes())))
                 .AddClaim("uid", uid)
                 .ExpirationTime(DateTime.UtcNow.AddMinutes(JwtOptions.AccessTokenLifetimeMinutes))
@@ -107,12 +105,15 @@ namespace MessengerBackend.Services
             JwtBuilder
                 .AddClaim("type", "auth")
                 .AddClaim("num", number)
-                .AddClaim("ip", Convert.ToBase64String(Sha256
+                .AddClaim("ip", Convert.ToBase64String(_sha256
                     .ComputeHash(ip.GetAddressBytes())))
                 .ExpirationTime(DateTime.UtcNow.AddMinutes(JwtOptions.AuthTokenLifetimeMinutes))
                 .Encode();
 
-        private static string GenerateToken(int length, string charset = CharSet)
+        private static string GenerateToken(int length) =>
+            GenerateToken(length, CharSet);
+
+        private static string GenerateToken(int length, string charset)
         {
             var chars = charset.ToCharArray();
             var data = new byte[length];
@@ -133,28 +134,25 @@ namespace MessengerBackend.Services
             return BitConverter.ToUInt32(buf);
         }
 
-        private const string CharSet = "abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-        private const string CrockfordCharSet = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
-        public static int CharSetLength = CharSet.Length;
+        private static readonly string CharSet = "abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+        private static readonly string CrockfordCharSet = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
+        public static int CharSetLength { get; } = CharSet.Length;
 
         public static class JwtOptions
         {
-            public const string Issuer = "backend";
-            public const string Audience = "user";
-            public const int RefreshTokenLifetimeDays = 30;
-            public const int AccessTokenLifetimeMinutes = 20;
-            public const int AuthTokenLifetimeMinutes = AccessTokenLifetimeMinutes;
-            public const int AccessTokenJtiLength = 10;
-            public const int RefreshTokenLength = 24;
+            public static readonly string Issuer = "backend";
+            public static readonly string Audience = "user";
+            public static readonly int RefreshTokenLifetimeDays = 30;
+            public static readonly int AccessTokenLifetimeMinutes = 20;
+            public static readonly int AuthTokenLifetimeMinutes = AccessTokenLifetimeMinutes;
+            public static readonly int AccessTokenJtiLength = 10;
+            public static readonly int RefreshTokenLength = 24;
         }
 
-        public TokenValidationParameters TokenValidationParameters;
+        public TokenValidationParameters ValidationParameters { get; }
 
-        public (SecurityToken, ClaimsPrincipal) ValidateAccessJWT(string jwt)
-        {
-            var principal = _jwtSecurityTokenHandler.ValidateToken(jwt, TokenValidationParameters, out var token);
-            return (token, principal);
-        }
+        public ClaimsPrincipal ValidateAccessJWT(string jwt) =>
+            _jwtSecurityTokenHandler.ValidateToken(jwt, ValidationParameters, out _);
 
         private const int PIDLength = 10;
     }

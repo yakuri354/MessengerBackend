@@ -13,13 +13,14 @@ namespace MessengerBackend.Services
         public UserService(MessengerDBContext dbContext) => _dbContext = dbContext;
         public DbSet<User> Users => _dbContext.Users;
 
-        public async Task<User?> AddUserAsync(string number, string firstName, string lastName)
+        public async Task<User?> AddUserAsync(string number, string firstName, string lastName, string username)
         {
             var newUser = new User
             {
                 Number = number,
                 FirstName = firstName,
-                LastName = lastName
+                LastName = lastName,
+                Username = username
             };
             try
             {

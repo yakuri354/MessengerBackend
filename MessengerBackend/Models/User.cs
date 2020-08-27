@@ -43,22 +43,4 @@ namespace MessengerBackend.Models
     }
 
     // Bots are on roadmap, however I am not implementing them now
-    // public class Bot
-    // {
-    //     [Required] [Column(TypeName = "int")] public int BotID { get; set; }
-    //
-    //     [Column(TypeName = "varchar(24)")] public string BotUsername { get; set; }
-    //
-    //     public string AvatarUrl { get; set; }
-    //
-    //     [Column(TypeName = "varchar(100)")] public string Name { get; set; }
-    //
-    //     public string Description { get; set; }
-    //
-    //     [Column(TypeName = "char(24)")] public string Token { get; set; }
-    //     
-    //     [Column(TypeName = "char(11)")] public string BotPID { get; set; }
-    //     
-    //     public DateTime JoinedAt { get; set; }
-    // }
 }

@@ -18,15 +18,15 @@ namespace MessengerBackend.Services
         public readonly ChatService ChatService;
         public readonly UserService UserService;
 
-        public ConcurrentDictionary<ulong, Connection> Connections = null!;
-        public Connection Current = null!;
-        public ulong CurrentMessageID;
-
         public MessageProcessService(UserService userService, ChatService chatService)
         {
             UserService = userService;
             ChatService = chatService;
         }
+
+        public ConcurrentDictionary<ulong, Connection> Connections { get; set; } = null!;
+        public Connection Current { get; set; } = null!;
+        public ulong CurrentMessageID { get; set; }
 
         // All public methods here are callable by the websocket Method property
         // They must return Task<OutboundMessage> or OutboundMessage
@@ -47,7 +47,7 @@ namespace MessengerBackend.Services
                 CreatedAt = DateTime.UtcNow,
                 Type = RoomType.Group
             };
-            var newRoom = await ChatService.CreateRoomWithUser(room, Current.User!);
+            var newRoom = await ChatService.CreateRoomWithUser(room, Current.CurrentUser!);
             return Success(new Dictionary<string, object?>
             {
                 { "roomID", newRoom.RoomPID }
@@ -62,7 +62,7 @@ namespace MessengerBackend.Services
                 CreatedAt = DateTime.UtcNow,
                 Type = RoomType.Private
             };
-            var newRoom = await ChatService.CreateRoomWithUser(room, Current.User!);
+            var newRoom = await ChatService.CreateRoomWithUser(room, Current.CurrentUser!);
             var targetUser = await
                 UserService.Users.SingleOrDefaultAsync(u => u.UserPID == targetPID);
             if (targetUser == null)
@@ -92,7 +92,7 @@ namespace MessengerBackend.Services
                 return Fail("Link must be unique");
             }
 
-            var newRoom = await ChatService.CreateRoomWithUser(room, Current.User!);
+            var newRoom = await ChatService.CreateRoomWithUser(room, Current.CurrentUser!);
             return Success(new Dictionary<string, object?>
             {
                 { "roomID", newRoom.RoomPID },
@@ -112,11 +112,11 @@ namespace MessengerBackend.Services
 
             var msg = await ChatService.CreateMessage(new Message
             {
-                Sender = Current.User,
+                Sender = Current.CurrentUser,
                 Text = text,
                 TargetRoom = room
             });
-            if (room == null || room.Users.All(u => u.UserID != Current.User!.UserID))
+            if (room == null || room.Users.All(u => u.UserID != Current.CurrentUser!.UserID))
             {
                 return Fail("Access denied");
             }
@@ -130,7 +130,7 @@ namespace MessengerBackend.Services
                     Message = msg,
                     Subscription = sub
                 });
-                foreach (var connection in Connections.Values.Where(c => c.User?.UserID == sub.User.UserID))
+                foreach (var connection in Connections.Values.Where(c => c.CurrentUser?.UserID == sub.User.UserID))
                 {
                     var id = (uint) (_rng.NextDouble() * uint.MaxValue);
                     connection.AnswerPendingMessages.TryAdd(CurrentMessageID, async message =>
@@ -165,8 +165,6 @@ namespace MessengerBackend.Services
             IsSuccess = false,
             Type = OutboundMessageType.Response
         };
-
-        private OutboundMessage NotImplemented(uint id) => Fail("Not implemented");
 
         private static OutboundMessage Success() => new OutboundMessage
         {

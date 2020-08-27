@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Text.Json;
 using PhoneNumbers;
 
 namespace MessengerBackend.Errors
@@ -42,18 +41,6 @@ namespace MessengerBackend.Errors
         } + "; " + Details;
     }
 
-    public class JsonParseException : ApiErrorException
-    {
-        public JsonParseException(JsonException ex) => Message = ex.Message;
-        public JsonParseException(Newtonsoft.Json.JsonException ex) => Message = ex.Message;
-        public JsonParseException(string message) => Message = message;
-        public override int Code => 1000;
-        public override int HttpStatusCode => 400;
-        public override string Summary => "Json parse error";
-
-        public override string Message { get; }
-    }
-
     public class TooManyRequestsException : ApiErrorException
     {
         public override int Code => 1200;
@@ -63,11 +50,11 @@ namespace MessengerBackend.Errors
 
     public class WrongTokenException : ApiErrorException
     {
-        private readonly string _actualType;
+        private readonly string? _actualType;
 
-        private readonly string _requiredType;
+        private readonly string? _requiredType;
 
-        public WrongTokenException(string requiredType, string actualType)
+        public WrongTokenException(string? requiredType, string? actualType)
         {
             _requiredType = requiredType;
             _actualType = actualType;

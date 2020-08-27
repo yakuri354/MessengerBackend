@@ -14,15 +14,15 @@ namespace MessengerBackend.Controllers
         [HttpGet]
         public IActionResult Index() => View();
 
-// #if USERSA
-//         [Produces("application/octet-stream")]
-//         [return: Description("Gets RSA JWT Public Key in the PKCS#1 format")]
-//         [HttpGet("publicKey")]
-//         // Same
-//         public IActionResult GetPublicKey()
-//         {
-//             return Ok(_cryptoService.PublicKey.ExportRSAPublicKey());
-//         }
-// #endif
+#if USERSA
+        [Produces("application/octet-stream")]
+        [return: Description("Gets RSA JWT Public Key in the PKCS#1 format")]
+        [HttpGet("publicKey")]
+        // Same
+        public IActionResult GetPublicKey()
+        {
+            return Ok(_cryptoService.PublicKey.ExportRSAPublicKey());
+        }
+#endif
     }
 }

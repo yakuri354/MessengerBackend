@@ -27,8 +27,13 @@ namespace MessengerBackend.RealTime
             return this;
         }
 
-        public VerificationBuilder Argument<T>(Func<T, string?>? customRequirement = null,
-            bool required = true)
+        public VerificationBuilder Argument<T>(Func<T, string?>? customRequirement) =>
+            Argument(customRequirement, false);
+
+        public VerificationBuilder Argument<T>() =>
+            Argument<T>(null, false);
+
+        public VerificationBuilder Argument<T>(Func<T, string?>? customRequirement, bool required)
         {
             var args = _argumentPredicates.Count + 1;
             if (required)
@@ -84,7 +89,7 @@ namespace MessengerBackend.RealTime
                         return $"Argument {args} must be specified";
                     }
 
-                    if (!(arg.GetType() == argumentType))
+                    if (arg.GetType() != argumentType)
                     {
                         return $"Argument {args} must be of type {argumentType.Name}";
                     }
@@ -102,7 +107,7 @@ namespace MessengerBackend.RealTime
                         return null;
                     }
 
-                    if (!(arg.GetType() == argumentType))
+                    if (arg.GetType() != argumentType)
                     {
                         return $"Argument {args} must be of type {argumentType.Name}";
                     }
