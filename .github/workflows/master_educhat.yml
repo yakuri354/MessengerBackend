@@ -10,7 +10,7 @@ on:
 
 jobs:
   build-and-deploy:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
 
     steps:
     - uses: actions/checkout@master
@@ -31,5 +31,5 @@ jobs:
       with:
         app-name: 'educhat'
         slot-name: 'production'
-        publish-profile: ${{ secrets.AzureAppService_PublishProfile_79193d274240402186c8cbb63494a480 }}
+        publish-profile: ${{ secrets.AzureAppService_PublishProfile_2ffad57abce3451bbc8518891daa2443 }}
         package: ${{env.DOTNET_ROOT}}/myapp 
