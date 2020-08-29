@@ -22,9 +22,12 @@ jobs:
 
     - name: Build with dotnet
       run: dotnet build --configuration Release
+    
+    - name: Test with dotnet
+      run: dotnet test
 
     - name: dotnet publish
-      run: dotnet publish -c Release -o ${{env.DOTNET_ROOT}}/myapp
+      run: dotnet publish -c Release -o ${{env.DOTNET_ROOT}}/app
 
     - name: Deploy to Azure Web App
       uses: azure/webapps-deploy@v2
@@ -32,4 +35,4 @@ jobs:
         app-name: 'educhat'
         slot-name: 'production'
         publish-profile: ${{ secrets.AzureAppService_PublishProfile_2ffad57abce3451bbc8518891daa2443 }}
-        package: ${{env.DOTNET_ROOT}}/myapp 
+        package: ${{env.DOTNET_ROOT}}/app
