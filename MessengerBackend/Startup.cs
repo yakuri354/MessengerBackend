@@ -79,7 +79,7 @@ namespace MessengerBackend
             services.AddDbContext<MessengerDBContext>(builder =>
             {
                 builder
-                    .UseNpgsql(Configuration["Database:ConnectionString"]
+                    .UseNpgsql(Configuration.GetConnectionString("Postgres")
                                ?? throw new ArgumentException("No connection string provided"),
                         o => o
                             .EnableRetryOnFailure()
@@ -219,19 +219,6 @@ namespace MessengerBackend
 
             app.UseAuthentication();
             app.UseAuthorization();
-
-            // app.Use(async (ctx, next) =>
-            // {
-            //     if (!ctx?.GetEndpoint()?.RequestDelegate?.Method
-            //         .GetCustomAttributes(typeof(AnyIP), false).Any() ?? false)
-            //     {
-            //         var ipHash = ctx.User?.FindFirst("ip")?.Value;
-            //         if (ipHash != null && !_cryptoService.IPValid(ctx.Connection.RemoteIpAddress, ipHash))
-            //             ctx.Response.StatusCode = 400;
-            //     }
-            //
-            //     await next();
-            // });
 
             app.UseEndpoints(endpoints => { endpoints.MapControllers(); });
         }

@@ -63,7 +63,7 @@ namespace MessengerBackend.Services
                 PrivateKey.ImportParameters(new PemReader(sr).ReadRsaKey());
             }
 #elif USEHMAC
-            _hmacKey = configuration["JWT:HMACKey"];
+            _hmacKey = configuration["JWTHMACKey"];
 #endif
             ValidationParameters = new TokenValidationParameters
             {

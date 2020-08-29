@@ -54,8 +54,7 @@ namespace MessengerBackend.RealTime
             _socket = socket;
             _connectionID = connectionID;
             _messageProcessService = messageProcessService;
-            _logger = new LoggerConfiguration()
-                .MinimumLevel.Is(Program.EventLevel)
+            _logger = Program.Configuration
                 .Enrich.WithDemystifiedStackTraces()
                 .Enrich.WithDynamicProperty("UserID", () => CurrentUser?.UserID.ToString() ?? "<null>")
                 .WriteTo.Console(
